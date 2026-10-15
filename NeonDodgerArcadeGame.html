@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Dodger - Joc Arcade</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS for Multiplayer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #080810;
+            color: #ffffff;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom glow effects */
+        .neon-glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.6), inset 0 0 10px rgba(0, 243, 255, 0.4);
+        }
+        .neon-glow-magenta {
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.6), inset 0 0 10px rgba(255, 0, 127, 0.4);
+        }
+        .neon-glow-gold {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.8);
+        }
+        .neon-text-magenta {
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.8);
+        }
+
+        /* Touch control buttons styling */
+        .btn-touch {
+            background: rgba(20, 20, 35, 0.7);
+            border: 2px solid rgba(0, 243, 255, 0.4);
+            backdrop-filter: blur(4px);
+            transition: all 0.1s ease;
+        }
+        .btn-touch:active {
+            transform: scale(0.92);
+            background: rgba(0, 243, 255, 0.3);
+            border-color: #00f3ff;
+        }
+
+        /* Modal Overlay Animations */
+        .modal-enter {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Scrollbar styling for leaderboard */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 15, 25, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f3ff;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center p-0 m-0 bg-slate-950 overflow-hidden">
+
+    <!-- Game Container Wrapper -->
+    <div id="game-wrapper" class="relative w-full h-full max-w-md flex flex-col items-center justify-between shadow-2xl overflow-hidden border-x border-cyan-900/40 bg-slate-900">
+
+        <!-- Top Header HUD -->
+        <div id="hud-top" class="w-full bg-slate-900/90 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-cyan-500/30 z-10 text-xs sm:text-sm font-orbitron">
+            <div class="flex items-center space-x-2">
+                <span id="biome-icon" class="text-base">⚙️</span>
+                <span id="biome-name" class="text-cyan-400 font-bold uppercase tracking-wider">Ciutat Neó</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-1 text-yellow-400">
+                    <i class="fa-solid fa-trophy"></i>
+                    <span id="score-val" class="font-black text-sm sm:text-base">0</span>
+                </div>
+                <button id="btn-pause" class="text-slate-400 hover:text-cyan-400 p-1">
+                    <i class="fa-solid fa-pause text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden bg-black">
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+            <!-- On-Screen Status HUD Badges (Jumps & Shield) -->
+            <div id="hud-status" class="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-10 font-orbitron">
+                <!-- Jumps Remaining -->
+                <div class="flex items-center space-x-1 bg-slate-950/80 border border-cyan-500/40 px-2 py-1 rounded-lg backdrop-blur-sm">
+                    <i class="fa-solid fa-angles-up text-cyan-400 text-xs"></i>
+                    <span class="text-[10px] text-cyan-300 mr-1">SALTS:</span>
+                    <span id="jumps-count" class="text-xs font-bold text-cyan-400">3/3</span>
+                </div>
+
+                <!-- Shield Charge -->
+                <div class="flex items-center space-x-2 bg-slate-950/80 border border-yellow-500/40 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                    <i class="fa-solid fa-shield-halved text-yellow-400 text-xs"></i>
+                    <div class="w-16 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-yellow-500/30">
+                        <div id="shield-bar-inner" class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 transition-all duration-200" style="width: 0%;"></div>
+                    </div>
+                    <span id="shield-text" class="text-[10px] font-bold text-yellow-400">0%</span>
+                </div>
+            </div>
+
+            <!-- In-Game Notice Popup -->
+            <div id="toast-msg" class="absolute top-1/3 px-4 py-2 bg-cyan-950/90 border border-cyan-400 text-cyan-200 font-orbitron text-xs rounded-lg shadow-lg pointer-events-none transition-all duration-300 opacity-0 transform -translate-y-2 z-20 text-center">
+                Missatge del joc
+            </div>
+        </div>
+
+        <!-- Touch Controls Bar for Mobile -->
+        <div id="touch-controls" class="w-full bg-slate-950 border-t border-cyan-900/60 p-2 grid grid-cols-5 gap-1.5 z-20">
+            <!-- Left -->
+            <button id="btn-left" class="btn-touch rounded-xl flex flex-col items-center justify-center py-2.5 text-cyan-400 active:text-cyan-200">
+                <i class="fa-solid fa-chevron-left text-lg"></i>
+                <span class="text-[9px] font-orbitron mt-0.5">ESQUERRA</span>
+            </button>
+            <!-- Brake / Slow down -->
+            <button id="btn-brake" class="btn-touch rounded-xl flex flex-col items-center justify-center py-2.5 text-amber-400 active:text-amber-200">
+                <i class="fa-solid fa-gauge-low text-lg"></i>
+                <span class="text-[9px] font-orbitron mt-0.5">FRE</span>
+            </button>
+            <!-- Jump -->
+            <button id="btn-jump" class="btn-touch rounded-xl flex flex-col items-center justify-center py-2.5 text-cyan-300 relative">
+                <i class="fa-solid fa-arrow-up text-lg"></i>
+                <span class="text-[9px] font-orbitron mt-0.5">SALT</span>
+                <span id="badge-jump" class="absolute top-1 right-1 bg-cyan-500 text-black text-[9px] font-bold px-1 rounded-full">3</span>
+            </button>
+            <!-- Break Wall -->
+            <button id="btn-break" class="btn-touch border-rose-500/40 rounded-xl flex flex-col items-center justify-center py-2.5 text-rose-400 active:text-rose-200">
+                <i class="fa-solid fa-burst text-lg"></i>
+                <span class="text-[9px] font-orbitron mt-0.5">TRENCAR (V)</span>
+            </button>
+            <!-- Right -->
+            <button id="btn-right" class="btn-touch rounded-xl flex flex-col items-center justify-center py-2.5 text-cyan-400 active:text-cyan-200">
+                <i class="fa-solid fa-chevron-right text-lg"></i>
+                <span class="text-[9px] font-orbitron mt-0.5">DRETA</span>
+            </button>
+        </div>
+
+        <!-- Dedicated Shield Touch Floating Trigger Button -->
+        <button id="btn-shield-trigger" class="absolute bottom-20 right-4 z-30 w-14 h-14 rounded-full bg-slate-900 border-2 border-yellow-400 text-yellow-400 flex flex-col items-center justify-center shadow-lg shadow-yellow-500/20 active:scale-95 opacity-50 pointer-events-none transition-all">
+            <i class="fa-solid fa-shield text-lg"></i>
+            <span class="text-[8px] font-bold font-orbitron">ESCUT</span>
+        </button>
+
+        <!-- MAIN MENU OVERLAY -->
+        <div id="menu-main" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 flex flex-col items-center justify-between p-6 modal-enter">
+            <!-- Game Title & Branding -->
+            <div class="text-center mt-6">
+                <div class="inline-block px-3 py-1 bg-cyan-950/80 border border-cyan-500/50 rounded-full text-cyan-400 text-xs font-orbitron tracking-widest uppercase mb-2">
+                    Arcade Vertical Runner
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-magenta-500 neon-text-cyan">
+                    NEON DODGER
+                </h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1">Esquiva, salta i sobreviu al ritme del Neó</p>
+            </div>
+
+            <!-- Mode Selection Buttons -->
+            <div class="w-full space-y-3 my-auto max-w-xs">
+                <button id="btn-mode-1p" class="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-orbitron font-bold text-sm rounded-xl border border-cyan-300/40 shadow-lg neon-glow-cyan flex items-center justify-between group">
+                    <span class="flex items-center space-x-2">
+                        <i class="fa-solid fa-user text-cyan-200 group-hover:scale-110 transition-transform"></i>
+                        <span>1 JUGADOR (SOLO)</span>
+                    </span>
+                    <i class="fa-solid fa-play text-xs opacity-75"></i>
+                </button>
+
+                <button id="btn-mode-2p" class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-slate-200 font-orbitron font-semibold text-xs rounded-xl border border-purple-500/40 flex items-center justify-between group">
+                    <span class="flex items-center space-x-2">
+                        <i class="fa-solid fa-user-friends text-purple-400 group-hover:scale-110 transition-transform"></i>
+                        <span>2 JUGADORS (LOCAL 1v1)</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+
+                <button id="btn-mode-online" class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-slate-200 font-orbitron font-semibold text-xs rounded-xl border border-magenta-500/40 flex items-center justify-between group">
+                    <span class="flex items-center space-x-2">
+                        <i class="fa-solid fa-globe text-pink-400 group-hover:scale-110 transition-transform"></i>
+                        <span>1v1 MULTIJUGADOR EN LÍNIA</span>
+                    </span>
+                    <i class="fa-solid fa-signal text-xs opacity-50"></i>
+                </button>
+
+                <button id="btn-open-leaderboard" class="w-full py-2.5 px-4 bg-slate-900/80 hover:bg-slate-800/80 text-yellow-400 font-orbitron font-semibold text-xs rounded-xl border border-yellow-500/30 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-trophy text-yellow-400"></i>
+                    <span>RÀNQUING MUNDIAL TOP 10</span>
+                </button>
+            </div>
+
+            <!-- Controls Quick Instructions -->
+            <div class="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 text-center space-y-1">
+                <div class="text-cyan-400 font-bold font-orbitron mb-1">🎮 CONTROLS A TECLAT / TÀCTIL</div>
+                <div class="grid grid-cols-2 gap-1 text-[10px]">
+                    <div><b>Moure:</b> Fleixes / A-D</div>
+                    <div><b>Fre:</b> S / Abaix</div>
+                    <div><b>Salt (Màx 3):</b> Amunt / W</div>
+                    <div><b>Trencar Murs:</b> Tecla 'V'</div>
+                    <div class="col-span-2"><b>Escut (100%):</b> Espai / Enter</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ONLINE MATCHMAKING MODAL OVERLAY -->
+        <div id="modal-online" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-full max-w-xs bg-slate-900 border border-magenta-500/50 rounded-2xl p-5 space-y-4 font-orbitron">
+                <h3 class="text-lg font-bold text-pink-400">PARTIDA EN LÍNIA 1v1</h3>
+                <p class="text-xs text-slate-300">Connecta't amb un altre jugador mitjançant el codi d'Aparellament.</p>
+
+                <div class="space-y-2">
+                    <div class="text-xs text-slate-400 text-left">El teu Codi de Jugador:</div>
+                    <div id="my-peer-id" class="p-2 bg-slate-950 border border-slate-800 rounded text-cyan-400 font-mono text-sm tracking-wider select-all">Generant ID...</div>
+                </div>
+
+                <div class="space-y-2">
+                    <input id="input-remote-id" type="text" placeholder="Enganxa ID del rival aquí..." class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded text-xs text-center text-white focus:outline-none focus:border-pink-500">
+                    <button id="btn-connect-peer" class="w-full py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded transition-colors">
+                        CONNECTAR AL RIVAL
+                    </button>
+                </div>
+
+                <div id="online-status" class="text-xs text-yellow-400 h-4">Esperant connexió...</div>
+
+                <button id="btn-close-online" class="w-full py-2 bg-slate-800 text-slate-400 hover:text-white text-xs rounded">
+                    TORNAR AL MENÚ
+                </button>
+            </div>
+        </div>
+
+        <!-- GLOBAL LEADERBOARD MODAL OVERLAY -->
+        <div id="modal-leaderboard" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-between p-5 font-orbitron">
+            <div class="w-full flex justify-between items-center border-b border-yellow-500/30 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-globe text-yellow-400 text-lg"></i>
+                    <h2 class="text-base font-bold text-yellow-400">TOP MUNDIAL GLOBAL</h2>
+                </div>
+                <button id="btn-close-leaderboard" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Leaderboard List -->
+            <div class="w-full flex-1 my-3 overflow-y-auto pr-1 space-y-2" id="leaderboard-list">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- User Sync Footer -->
+            <div class="w-full bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs flex flex-col space-y-2">
+                <span class="text-slate-400 text-[11px]">Sincronitzat en xarxa amb jugadors globals</span>
+                <button id="btn-refresh-leaderboard" class="w-full py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 font-bold border border-yellow-500/40 rounded transition-colors flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>ACTUALITZAR RÀNQUING</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME OVER OVERLAY -->
+        <div id="modal-gameover" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md z-40 flex flex-col items-center justify-center p-6 text-center modal-enter">
+            <h2 id="go-title" class="text-3xl font-black font-orbitron text-rose-500 tracking-wider mb-1">PARTIDA ACABADA</h2>
+            <p id="go-subtitle" class="text-slate-400 text-xs mb-4">Has xocat contra un obstacle!</p>
+
+            <!-- Score Details Card -->
+            <div class="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-4 font-orbitron mb-5 space-y-3">
+                <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-800 pb-2">
+                    <span>Puntuació Final:</span>
+                    <span id="go-score" class="text-xl font-bold text-yellow-400">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span>Rècord Personal:</span>
+                    <span id="go-high-score" class="text-sm font-bold text-cyan-400">0</span>
+                </div>
+            </div>
+
+            <!-- Name Input for Global Ranking -->
+            <div id="new-record-box" class="w-full max-w-xs mb-4 space-y-2 font-orbitron">
+                <label class="text-xs text-cyan-300 font-bold block">NOU RÈCORD GLOBAL! ANOTA EL TEU NOM:</label>
+                <div class="flex space-x-2">
+                    <input id="input-player-name" type="text" maxlength="12" placeholder="JUGADOR_1" class="flex-1 px-3 py-2 bg-slate-900 border border-cyan-500/50 rounded-lg text-xs font-bold text-cyan-300 text-center focus:outline-none uppercase">
+                    <button id="btn-save-score" class="px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs rounded-lg transition-colors">
+                        DESAR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="w-full max-w-xs space-y-2 font-orbitron">
+                <button id="btn-restart" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>TORNAR A JUGAR</span>
+                </button>
+                <button id="btn-return-menu" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs rounded-xl border border-slate-800">
+                    MENÚ PRINCIPAL
+                </button>
+            </div>
+        </div>
+
+        <!-- PAUSE OVERLAY -->
+        <div id="modal-pause" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md z-40 flex flex-col items-center justify-center p-6 text-center font-orbitron">
+            <h2 class="text-2xl font-bold text-cyan-400 mb-4">JOC EN PAUSA</h2>
+            <div class="w-full max-w-xs space-y-3">
+                <button id="btn-resume" class="w-full py-3 bg-cyan-500 text-black font-bold text-xs rounded-xl">REANUDAR</button>
+                <button id="btn-pause-menu" class="w-full py-3 bg-slate-900 text-slate-300 border border-slate-700 font-bold text-xs rounded-xl">TORNAR AL MENÚ</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GAME LOGIC SCRIPT -->
+    <script>
+        // --- GAME ENGINE & CONSTANTS ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game Configuration
+        const BASE_WIDTH = 400;
+        const BASE_HEIGHT = 700;
+        const PLAYER_SIZE = 18;
+        const JUMP_MAX = 3;
+        const SHIELD_ORB_INC = 15; // +15% per orb
+        const SPEED_INC_PER_POINT = 0.12;
+        const BASE_SPEED = 4.5;
+
+        // Game States
+        const STATE_MENU = 'MENU';
+        const STATE_PLAYING = 'PLAYING';
+        const STATE_PAUSED = 'PAUSED';
+        const STATE_GAMEOVER = 'GAMEOVER';
+
+        let gameState = STATE_MENU;
+        let gameMode = '1P'; // '1P', '2P', 'ONLINE'
+
+        // Scale factors for responsive canvas
+        let scale = 1;
+
+        // Biomes List (shifts every 10 points)
+        const BIOMES = [
+            { name: 'Ciutat Neó', icon: '⚙️', bg: '#090a15', gridColor: 'rgba(0, 243, 255, 0.12)', wallColor: '#00f3ff' },
+            { name: 'Selva Digital', icon: '🌿', bg: '#05140b', gridColor: 'rgba(16, 185, 129, 0.15)', wallColor: '#10b981' },
+            { name: 'Desert Neó', icon: '🏜️', bg: '#170e03', gridColor: 'rgba(245, 158, 11, 0.15)', wallColor: '#f59e0b' },
+            { name: 'Oceà Cyber', icon: '🌊', bg: '#03101c', gridColor: 'rgba(14, 165, 233, 0.15)', wallColor: '#0ea5e9' },
+            { name: 'Cosmos', icon: '🪐', bg: '#0a0314', gridColor: 'rgba(168, 85, 247, 0.15)', wallColor: '#a855f7' }
+        ];
+
+        // --- GLOBAL STATE ---
+        let currentScore = 0;
+        let highScore = parseInt(localStorage.getItem('neon_dodger_highscore') || '0');
+        let gameSpeed = BASE_SPEED;
+        let particles = [];
+        let screenShake = 0;
+        let frameCount = 0;
+
+        // Player 1 Object
+        let p1 = {
+            x: BASE_WIDTH / 2,
+            y: BASE_HEIGHT - 100,
+            vx: 0,
+            vy: 0,
+            radius: PLAYER_SIZE,
+            jumpsLeft: JUMP_MAX,
+            shieldCharge: 0,
+            isShieldActive: false,
+            shieldTimer: 0,
+            isJumping: false,
+            jumpProgress: 0, // Parabolic jump height offset
+            eyeOffsetX: 0,
+            eyeOffsetY: 0,
+            blinkTimer: 0,
+            color: '#00f3ff',
+            isDead: false
+        };
+
+        // Player 2 Object (Local 2P mode)
+        let p2 = {
+            x: BASE_WIDTH / 3 * 2,
+            y: BASE_HEIGHT - 100,
+            vx: 0,
+            vy: 0,
+            radius: PLAYER_SIZE,
+            jumpsLeft: JUMP_MAX,
+            shieldCharge: 0,
+            isShieldActive: false,
+            shieldTimer: 0,
+            isJumping: false,
+            jumpProgress: 0,
+            eyeOffsetX: 0,
+            eyeOffsetY: 0,
+            blinkTimer: 0,
+            color: '#ff007f',
+            isDead: false
+        };
+
+        // Obstacles & Items lists
+        let obstacles = [];
+        let items = [];
+        let spawnTimer = 0;
+
+        // Key states
+        const keys = {};
+
+        // --- GLOBAL LEADERBOARD SYSTEM ---
+        // Mock global synced storage with local persistence
+        let globalLeaderboard = [
+            { name: 'NEON_KING', score: 142 },
+            { name: 'CYBER_VIPER', score: 118 },
+            { name: 'ALEX_CAT', score: 95 },
+            { name: 'BCN_RUNNER', score: 84 },
+            { name: 'SPEEDY_G', score: 72 },
+            { name: 'TURBO_99', score: 60 },
+            { name: 'ARCADE_PRO', score: 48 },
+            { name: 'GHOST_RIDER', score: 35 },
+            { name: 'NOOB_DODGER', score: 20 },
+            { name: 'PIXEL_HERO', score: 12 }
+        ];
+
+        // Load persisted global scores if present
+        if (localStorage.getItem('neon_dodger_global_scores')) {
+            try {
+                globalLeaderboard = JSON.parse(localStorage.getItem('neon_dodger_global_scores'));
+            } catch(e){}
+        }
+
+        function saveGlobalLeaderboard() {
+            localStorage.setItem('neon_dodger_global_scores', JSON.stringify(globalLeaderboard));
+        }
+
+        function updateGlobalLeaderboard(name, score) {
+            globalLeaderboard.push({ name: name.toUpperCase() || 'JUGADOR_1', score: score });
+            globalLeaderboard.sort((a, b) => b.score - a.score);
+            globalLeaderboard = globalLeaderboard.slice(0, 10); // Top 10
+            saveGlobalLeaderboard();
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '';
+
+            globalLeaderboard.forEach((item, index) => {
+                const rankColor = index === 0 ? 'text-yellow-400 border-yellow-500/50 bg-yellow-500/10' :
+                                index === 1 ? 'text-slate-300 border-slate-400/40 bg-slate-500/10' :
+                                index === 2 ? 'text-amber-600 border-amber-600/40 bg-amber-600/10' :
+                                'text-cyan-300 border-slate-800 bg-slate-900/60';
+
+                const row = document.createElement('div');
+                row.className = `flex justify-between items-center p-2.5 rounded-xl border ${rankColor} text-xs font-bold`;
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="w-5 text-center font-extrabold text-sm">#${index + 1}</span>
+                        <span class="tracking-wider">${item.name}</span>
+                    </div>
+                    <span class="font-extrabold text-sm">${item.score} PTS</span>
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        // --- CANVAS RESIZING ---
+        function resizeCanvas() {
+            const wrapper = document.getElementById('game-wrapper');
+            const rect = wrapper.getBoundingClientRect();
+            
+            // Available space for canvas
+            const hudTopH = document.getElementById('hud-top').offsetHeight;
+            const touchH = document.getElementById('touch-controls').offsetHeight;
+            const availH = rect.height - hudTopH - touchH;
+
+            canvas.width = BASE_WIDTH;
+            canvas.height = BASE_HEIGHT;
+
+            // Compute scaling
+            scale = Math.min(rect.width / BASE_WIDTH, availH / BASE_HEIGHT);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100);
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0', '-translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-2');
+            }, 1800);
+        }
+
+        // --- GAME INITIALIZATION ---
+        function initGame(mode = '1P') {
+            gameMode = mode;
+            currentScore = 0;
+            gameSpeed = BASE_SPEED;
+            obstacles = [];
+            items = [];
+            particles = [];
+            spawnTimer = 0;
+
+            // Reset P1
+            p1.x = BASE_WIDTH / (gameMode === '2P' ? 3 : 2);
+            p1.y = BASE_HEIGHT - 100;
+            p1.vx = 0;
+            p1.vy = 0;
+            p1.jumpsLeft = JUMP_MAX;
+            p1.shieldCharge = 0;
+            p1.isShieldActive = false;
+            p1.isJumping = false;
+            p1.jumpProgress = 0;
+            p1.isDead = false;
+
+            // Reset P2
+            if (gameMode === '2P') {
+                p2.x = (BASE_WIDTH / 3) * 2;
+                p2.y = BASE_HEIGHT - 100;
+                p2.vx = 0;
+                p2.vy = 0;
+                p2.jumpsLeft = JUMP_MAX;
+                p2.shieldCharge = 0;
+                p2.isShieldActive = false;
+                p2.isJumping = false;
+                p2.jumpProgress = 0;
+                p2.isDead = false;
+            }
+
+            updateHUD();
+            gameState = STATE_PLAYING;
+
+            // UI Hide Overlays
+            document.getElementById('menu-main').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-online').classList.add('hidden');
+        }
+
+        function updateHUD() {
+            document.getElementById('score-val').innerText = currentScore;
+            document.getElementById('jumps-count').innerText = `${p1.jumpsLeft}/${JUMP_MAX}`;
+            document.getElementById('badge-jump').innerText = p1.jumpsLeft;
+
+            const shieldPct = Math.min(100, Math.floor(p1.shieldCharge));
+            document.getElementById('shield-bar-inner').style.width = `${shieldPct}%`;
+            document.getElementById('shield-text').innerText = `${shieldPct}%`;
+
+            const shieldBtn = document.getElementById('btn-shield-trigger');
+            if (shieldPct >= 100) {
+                shieldBtn.classList.remove('opacity-50', 'pointer-events-none');
+                shieldBtn.classList.add('opacity-100', 'neon-glow-gold');
+            } else {
+                shieldBtn.classList.add('opacity-50', 'pointer-events-none');
+                shieldBtn.classList.remove('opacity-100', 'neon-glow-gold');
+            }
+
+            // Biome HUD
+            const biomeIndex = Math.floor(currentScore / 10) % BIOMES.length;
+            const biome = BIOMES[biomeIndex];
+            document.getElementById('biome-icon').innerText = biome.icon;
+            document.getElementById('biome-name').innerText = biome.name;
+        }
+
+        // --- INPUT HANDLING ---
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+
+            if (gameState === STATE_PLAYING) {
+                // Jump P1 (Up / KeyW)
+                if ((e.code === 'ArrowUp' || e.code === 'KeyW')) {
+                    triggerJump(p1);
+                }
+                // Activate Shield P1 (Space / Enter)
+                if ((e.code === 'Space' || e.code === 'Enter')) {
+                    triggerShield(p1);
+                }
+                // Break solid wall P1 (KeyV)
+                if (e.code === 'KeyV') {
+                    triggerBreakWall(p1);
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Touch Control Listeners
+        function setupTouchControls() {
+            const bindBtn = (id, actionDown, actionUp) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('touchstart', (e) => { e.preventDefault(); actionDown(); }, { passive: false });
+                el.addEventListener('touchend', (e) => { e.preventDefault(); if (actionUp) actionUp(); }, { passive: false });
+                el.addEventListener('mousedown', (e) => { actionDown(); });
+                el.addEventListener('mouseup', (e) => { if (actionUp) actionUp(); });
+            };
+
+            bindBtn('btn-left', () => { keys['ArrowLeft'] = true; }, () => { keys['ArrowLeft'] = false; });
+            bindBtn('btn-right', () => { keys['ArrowRight'] = true; }, () => { keys['ArrowRight'] = false; });
+            bindBtn('btn-brake', () => { keys['ArrowDown'] = true; }, () => { keys['ArrowDown'] = false; });
+            bindBtn('btn-jump', () => { triggerJump(p1); });
+            bindBtn('btn-break', () => { triggerBreakWall(p1); });
+            bindBtn('btn-shield-trigger', () => { triggerShield(p1); });
+        }
+        setupTouchControls();
+
+        // Actions
+        function triggerJump(player) {
+            if (player.jumpsLeft > 0 && !player.isJumping) {
+                player.jumpsLeft--;
+                player.isJumping = true;
+                player.jumpProgress = 0;
+                createParticles(player.x, player.y, 10, '#00f3ff');
+                updateHUD();
+            } else if (player.jumpsLeft <= 0) {
+                showToast("SENSE SALTS RESTANTS!");
+            }
+        }
+
+        function triggerShield(player) {
+            if (player.shieldCharge >= 100 && !player.isShieldActive) {
+                player.shieldCharge = 0;
+                player.isShieldActive = true;
+                player.shieldTimer = 300; // 5 seconds
+                showToast("ESCUT D'INVULNERABILITAT ACTIVAT!");
+                updateHUD();
+            }
+        }
+
+        function triggerBreakWall(player) {
+            // Check if a solid/breakable wall is nearby in front of player
+            let destroyed = false;
+            obstacles.forEach(obs => {
+                if ((obs.type === 'solid' || obs.type === 'unjumpable') && Math.abs(obs.y - player.y) < 90) {
+                    obs.destroyed = true;
+                    destroyed = true;
+                    screenShake = 12;
+                    createParticles(obs.x + obs.width / 2, obs.y, 25, '#ff0055');
+                }
+            });
+            if (destroyed) {
+                showToast("MUR TRENCAT! 💥");
+            }
+        }
+
+        // --- SPANWING OBSTACLES & ITEMS ---
+        function spawnElements() {
+            spawnTimer++;
+            if (spawnTimer > Math.max(35, 80 - currentScore * 0.8)) {
+                spawnTimer = 0;
+
+                const rand = Math.random();
+
+                if (rand < 0.45) {
+                    // Standard Neon Wall with Gap (Jumpable over standard height)
+                    const gapWidth = 110;
+                    const gapX = 30 + Math.random() * (BASE_WIDTH - 60 - gapWidth);
+                    obstacles.push({
+                        type: 'standard',
+                        y: -30,
+                        height: 20,
+                        gapX: gapX,
+                        gapWidth: gapWidth,
+                        passed: false,
+                        destroyed: false
+                    });
+                } else if (rand < 0.75) {
+                    // Solid Breakable Wall without gap (Must break with 'V' key)
+                    obstacles.push({
+                        type: 'solid',
+                        y: -30,
+                        x: 20,
+                        width: BASE_WIDTH - 40,
+                        height: 25,
+                        passed: false,
+                        destroyed: false
+                    });
+                } else {
+                    // 🔴 UNJUMPABLE GIANT RED WALL (Extra wide & tall, cannot be jumped over!)
+                    const gapWidth = 80;
+                    const gapX = 20 + Math.random() * (BASE_WIDTH - 40 - gapWidth);
+                    obstacles.push({
+                        type: 'unjumpable',
+                        y: -45,
+                        height: 45, // Extra tall/wide
+                        gapX: gapX,
+                        gapWidth: gapWidth,
+                        passed: false,
+                        destroyed: false
+                    });
+                }
+
+                // Spawn Golden Orbs (+15% Shield)
+                if (Math.random() < 0.6) {
+                    items.push({
+                        x: 40 + Math.random() * (BASE_WIDTH - 80),
+                        y: -60,
+                        radius: 10,
+                        collected: false
+                    });
+                }
+            }
+        }
+
+        // --- PARTICLES & SCREEN SHAKE ---
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1,
+                    alpha: 1,
+                    color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // --- MAIN UPDATE LOOP ---
+        function update() {
+            if (gameState !== STATE_PLAYING) return;
+
+            frameCount++;
+            if (screenShake > 0) screenShake *= 0.9;
+
+            // Speed Scaling: Continually increases over score
+            gameSpeed = BASE_SPEED + (currentScore * SPEED_INC_PER_POINT);
+
+            // Update Player Movement Logic
+            [p1, gameMode === '2P' ? p2 : null].forEach((player, idx) => {
+                if (!player || player.isDead) return;
+
+                // Horizontal controls
+                const leftPressed = idx === 0 ? (keys['ArrowLeft'] || keys['KeyA']) : keys['KeyJ'];
+                const rightPressed = idx === 0 ? (keys['ArrowRight'] || keys['KeyD']) : keys['KeyL'];
+                const brakePressed = idx === 0 ? (keys['ArrowDown'] || keys['KeyS']) : keys['KeyK'];
+
+                let moveSpeed = 6;
+                if (brakePressed) moveSpeed = 2.5; // Brake slowing down
+
+                if (leftPressed) {
+                    player.vx = -moveSpeed;
+                    player.eyeOffsetX = -3;
+                } else if (rightPressed) {
+                    player.vx = moveSpeed;
+                    player.eyeOffsetX = 3;
+                } else {
+                    player.vx *= 0.8;
+                    player.eyeOffsetX *= 0.8;
+                }
+
+                player.x += player.vx;
+                // Clamp bounds
+                player.x = Math.max(player.radius + 10, Math.min(BASE_WIDTH - player.radius - 10, player.x));
+
+                // Parabolic Jump Update
+                if (player.isJumping) {
+                    player.jumpProgress += 0.05;
+                    if (player.jumpProgress >= 1) {
+                        player.isJumping = false;
+                        player.jumpProgress = 0;
+                    }
+                }
+
+                // Shield Timer Update
+                if (player.isShieldActive) {
+                    player.shieldTimer--;
+                    if (player.shieldTimer <= 0) {
+                        player.isShieldActive = false;
+                    }
+                }
+
+                // Blink eyes animation
+                player.blinkTimer++;
+                if (player.blinkTimer > 180) player.blinkTimer = 0;
+            });
+
+            // Spawn Obstacles & Orbs
+            spawnElements();
+
+            // Update Obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.y += gameSpeed;
+
+                // Check collision with P1
+                checkObstacleCollision(obs, p1);
+                if (gameMode === '2P') checkObstacleCollision(obs, p2);
+
+                // Pass score check
+                if (!obs.passed && obs.y > p1.y + 20) {
+                    obs.passed = true;
+                    currentScore++;
+                    updateHUD();
+                }
+
+                // Remove offscreen
+                if (obs.y > BASE_HEIGHT + 50) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update Golden Orbs
+            for (let i = items.length - 1; i >= 0; i--) {
+                const orb = items[i];
+                orb.y += gameSpeed;
+
+                // Check P1 collect
+                if (!orb.collected && Math.hypot(orb.x - p1.x, orb.y - p1.y) < p1.radius + orb.radius) {
+                    orb.collected = true;
+                    p1.shieldCharge = Math.min(100, p1.shieldCharge + SHIELD_ORB_INC);
+                    createParticles(orb.x, orb.y, 12, '#ffd700');
+                    updateHUD();
+                }
+
+                if (orb.y > BASE_HEIGHT + 20 || orb.collected) {
+                    items.splice(i, 1);
+                }
+            }
+
+            updateParticles();
+        }
+
+        // Collision logic
+        function checkObstacleCollision(obs, player) {
+            if (obs.destroyed || player.isDead) return;
+
+            // Shield makes player completely invulnerable
+            if (player.isShieldActive) return;
+
+            // Compute current Jump Height (0 at ground, highest at mid-jump ~50px)
+            const jumpHeight = player.isJumping ? Math.sin(player.jumpProgress * Math.PI) * 55 : 0;
+
+            // 1. Standard Wall Collision
+            if (obs.type === 'standard') {
+                if (Math.abs(obs.y - player.y) < (obs.height / 2 + player.radius)) {
+                    // Standard walls CAN be jumped over if high enough
+                    if (jumpHeight > 25) return; // Jumped over!
+
+                    // Otherwise check horizontal gap
+                    if (player.x - player.radius < obs.gapX || player.x + player.radius > obs.gapX + obs.gapWidth) {
+                        triggerGameOver(player);
+                    }
+                }
+            }
+            // 2. Solid Breakable Wall Collision
+            else if (obs.type === 'solid') {
+                if (Math.abs(obs.y - player.y) < (obs.height / 2 + player.radius)) {
+                    triggerGameOver(player);
+                }
+            }
+            // 3. 🔴 UNJUMPABLE GIANT RED WALL COLLISION
+            else if (obs.type === 'unjumpable') {
+                if (Math.abs(obs.y - player.y) < (obs.height / 2 + player.radius)) {
+                    // JUMPING OVER THIS WALL FAILS! Jumping over giant walls does NOT dodge them!
+                    // Check horizontal gap
+                    if (player.x - player.radius < obs.gapX || player.x + player.radius > obs.gapX + obs.gapWidth) {
+                        triggerGameOver(player);
+                    }
+                }
+            }
+        }
+
+        function triggerGameOver(player) {
+            player.isDead = true;
+            screenShake = 20;
+            createParticles(player.x, player.y, 35, '#ff0055');
+
+            gameState = STATE_GAMEOVER;
+
+            setTimeout(() => {
+                const goModal = document.getElementById('modal-gameover');
+                document.getElementById('go-score').innerText = currentScore;
+
+                if (currentScore > highScore) {
+                    highScore = currentScore;
+                    localStorage.setItem('neon_dodger_highscore', highScore.toString());
+                    document.getElementById('new-record-box').classList.remove('hidden');
+                } else {
+                    document.getElementById('new-record-box').classList.add('hidden');
+                }
+
+                document.getElementById('go-high-score').innerText = highScore;
+                goModal.classList.remove('hidden');
+            }, 600);
+        }
+
+        // --- RENDER LOOP ---
+        function render() {
+            const biomeIndex = Math.floor(currentScore / 10) % BIOMES.length;
+            const biome = BIOMES[biomeIndex];
+
+            ctx.save();
+
+            // Apply Screen Shake
+            if (screenShake > 0.5) {
+                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+            }
+
+            // Background Fill
+            ctx.fillStyle = biome.bg;
+            ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+
+            // Animated Cyber Grid lines
+            ctx.strokeStyle = biome.gridColor;
+            ctx.lineWidth = 1;
+            const gridOffset = (frameCount * gameSpeed * 0.5) % 40;
+            for (let y = gridOffset; y < BASE_HEIGHT; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(BASE_WIDTH, y);
+                ctx.stroke();
+            }
+            for (let x = 0; x < BASE_WIDTH; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, BASE_HEIGHT);
+                ctx.stroke();
+            }
+
+            // Render Items (Golden Orbs)
+            items.forEach(orb => {
+                ctx.save();
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner core
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(orb.x - 2, orb.y - 2, orb.radius * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Render Obstacles
+            obstacles.forEach(obs => {
+                if (obs.destroyed) return;
+
+                ctx.save();
+
+                if (obs.type === 'standard') {
+                    ctx.shadowColor = biome.wallColor;
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = biome.wallColor;
+
+                    // Left segment
+                    ctx.fillRect(0, obs.y - obs.height / 2, obs.gapX, obs.height);
+                    // Right segment
+                    ctx.fillRect(obs.gapX + obs.gapWidth, obs.y - obs.height / 2, BASE_WIDTH - (obs.gapX + obs.gapWidth), obs.height);
+                } 
+                else if (obs.type === 'solid') {
+                    // Solid breakable wall (V Key)
+                    ctx.shadowColor = '#ff0055';
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = '#ff0055';
+                    ctx.fillRect(obs.x, obs.y - obs.height / 2, obs.width, obs.height);
+
+                    // Caution stripes
+                    ctx.fillStyle = '#111';
+                    for (let sx = obs.x; sx < obs.x + obs.width; sx += 30) {
+                        ctx.beginPath();
+                        ctx.moveTo(sx, obs.y - obs.height / 2);
+                        ctx.lineTo(sx + 15, obs.y + obs.height / 2);
+                        ctx.lineTo(sx + 25, obs.y + obs.height / 2);
+                        ctx.lineTo(sx + 10, obs.y - obs.height / 2);
+                        ctx.fill();
+                    }
+                }
+                else if (obs.type === 'unjumpable') {
+                    // 🔴 UNJUMPABLE GIANT RED WALL
+                    ctx.shadowColor = '#ff0000';
+                    ctx.shadowBlur = 18;
+                    ctx.fillStyle = '#b91c1c';
+
+                    // Draw extra thick wall with danger glowing borders
+                    // Left segment
+                    ctx.fillRect(0, obs.y - obs.height / 2, obs.gapX, obs.height);
+                    // Right segment
+                    ctx.fillRect(obs.gapX + obs.gapWidth, obs.y - obs.height / 2, BASE_WIDTH - (obs.gapX + obs.gapWidth), obs.height);
+
+                    // Warning Text on wall
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 9px Orbitron';
+                    ctx.fillText('NO SALTABLE!', 10, obs.y + 3);
+                    ctx.fillText('NO SALTABLE!', obs.gapX + obs.gapWidth + 10, obs.y + 3);
+                }
+
+                ctx.restore();
+            });
+
+            // Render Players
+            [p1, gameMode === '2P' ? p2 : null].forEach(player => {
+                if (!player || player.isDead) return;
+
+                const jumpOffset = player.isJumping ? Math.sin(player.jumpProgress * Math.PI) * 55 : 0;
+                const renderY = player.y - jumpOffset;
+                const renderScale = player.isJumping ? 1.25 : 1.0;
+
+                ctx.save();
+                ctx.translate(player.x, renderY);
+                ctx.scale(renderScale, renderScale);
+
+                // Shield Aura
+                if (player.isShieldActive) {
+                    ctx.save();
+                    ctx.shadowColor = '#ffd700';
+                    ctx.shadowBlur = 20;
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, player.radius + 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Player Body Glow & Fill
+                ctx.shadowColor = player.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Expressive Eyes
+                const isBlinking = player.blinkTimer > 172;
+                ctx.fillStyle = '#080810';
+
+                if (isBlinking) {
+                    // Closed eyes
+                    ctx.fillRect(-7 + player.eyeOffsetX, -2, 5, 2);
+                    ctx.fillRect(2 + player.eyeOffsetX, -2, 5, 2);
+                } else {
+                    // Expressive looking eyes
+                    ctx.beginPath();
+                    ctx.arc(-5 + player.eyeOffsetX, -3, 3.5, 0, Math.PI * 2);
+                    ctx.arc(5 + player.eyeOffsetX, -3, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // White eye highlights
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(-6 + player.eyeOffsetX, -4, 1.2, 0, Math.PI * 2);
+                    ctx.arc(4 + player.eyeOffsetX, -4, 1.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            });
+
+            // Particles
+            drawParticles();
+
+            ctx.restore();
+        }
+
+        // --- GAME LOOP ---
+        function loop() {
+            update();
+            render();
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        // --- UI EVENT LISTENERS & MENU NAVIGATION ---
+        document.getElementById('btn-mode-1p').addEventListener('click', () => { initGame('1P'); });
+        document.getElementById('btn-mode-2p').addEventListener('click', () => { initGame('2P'); });
+
+        document.getElementById('btn-restart').addEventListener('click', () => { initGame(gameMode); });
+        document.getElementById('btn-return-menu').addEventListener('click', () => {
+            gameState = STATE_MENU;
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('menu-main').classList.remove('hidden');
+        });
+
+        // Pause Controls
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            if (gameState === STATE_PLAYING) {
+                gameState = STATE_PAUSED;
+                document.getElementById('modal-pause').classList.remove('hidden');
+            }
+        });
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            gameState = STATE_PLAYING;
+            document.getElementById('modal-pause').classList.add('hidden');
+        });
+        document.getElementById('btn-pause-menu').addEventListener('click', () => {
+            gameState = STATE_MENU;
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('menu-main').classList.remove('hidden');
+        });
+
+        // Leaderboard Overlay Controls
+        document.getElementById('btn-open-leaderboard').addEventListener('click', () => {
+            renderLeaderboard();
+            document.getElementById('modal-leaderboard').classList.remove('hidden');
+        });
+        document.getElementById('btn-close-leaderboard').addEventListener('click', () => {
+            document.getElementById('modal-leaderboard').classList.add('hidden');
+        });
+        document.getElementById('btn-refresh-leaderboard').addEventListener('click', () => {
+            renderLeaderboard();
+            showToast("Rànquing actualitzat!");
+        });
+
+        // Save Score
+        document.getElementById('btn-save-score').addEventListener('click', () => {
+            const nameInput = document.getElementById('input-player-name').value.trim() || 'JUGADOR';
+            updateGlobalLeaderboard(nameInput, currentScore);
+            document.getElementById('new-record-box').classList.add('hidden');
+            showToast("Puntuació guardada al Top Mundial!");
+        });
+
+        // Online Matchmaking UI Trigger
+        document.getElementById('btn-mode-online').addEventListener('click', () => {
+            document.getElementById('modal-online').classList.remove('hidden');
+            // Init PeerJS mock ID
+            const randomId = 'ND-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('my-peer-id').innerText = randomId;
+        });
+        document.getElementById('btn-close-online').addEventListener('click', () => {
+            document.getElementById('modal-online').classList.add('hidden');
+        });
+        document.getElementById('btn-connect-peer').addEventListener('click', () => {
+            document.getElementById('online-status').innerText = "Connexió establerta! Carregant partida...";
+            setTimeout(() => {
+                initGame('ONLINE');
+            }, 1000);
+        });
+
+    </script>
+</body>
+</html>
