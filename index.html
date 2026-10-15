@@ -1,1149 +1,1191 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Dodger - Joc Arcade</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.acom"></script>
-    <!-- FontAwesome per a icones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PeerJS per al mode Multijugador Online P2P -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: #090a0f;
-            color: #ffffff;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-            overflow-x: hidden;
-        }
-
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
-        }
-
-        .neon-border {
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 15px rgba(0, 243, 255, 0.2);
-        }
-
-        .neon-text-cyan {
-            text-shadow: 0 0 8px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.5);
-        }
-
-        .neon-text-pink {
-            text-shadow: 0 0 8px rgba(255, 0, 127, 0.8), 0 0 20px rgba(255, 0, 127, 0.5);
-        }
-
-        /* Botons tàctils personalitzats */
-        .btn-touch {
-            background: rgba(18, 24, 38, 0.8);
-            border: 2px solid rgba(0, 243, 255, 0.4);
-            backdrop-filter: blur(4px);
-            transition: all 0.1s ease;
-        }
-
-        .btn-touch:active {
-            background: rgba(0, 243, 255, 0.3);
-            transform: scale(0.95);
-        }
-
-        /* Eliminació de barrer scroll */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #090a0f;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #00f3ff;
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Neon Dodger Arcade</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #060814;
+      color: #fff;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .neon-border-cyan { border-color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
+    .neon-border-pink { border-color: #ff007f; box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
+    .neon-btn {
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .neon-btn:active { transform: scale(0.95); }
+    /* Touch controls styling */
+    .touch-btn {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+    }
+    .touch-btn:active {
+      filter: brightness(1.4);
+      transform: scale(0.94);
+    }
+  </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-2 select-none">
+<body class="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 text-slate-100">
 
-    <div class="w-full max-w-md flex flex-col items-center">
-        <!-- Capçalera del Joc -->
-        <header class="w-full flex justify-between items-center px-4 py-2 bg-slate-900/80 rounded-t-xl border-b border-cyan-500/30">
-            <h1 class="font-orbitron font-bold text-xl text-cyan-400 tracking-wider neon-text-cyan flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-yellow-400"></i> NEON DODGER
-            </h1>
-            <div id="biome-badge" class="px-3 py-1 bg-cyan-950/80 border border-cyan-500/50 rounded-full text-xs font-bold text-cyan-300 flex items-center gap-1">
-                ⚙️ NEON
-            </div>
-        </header>
+  <!-- CAPÇALERA PRINCIPAL -->
+  <header class="text-center mb-3">
+    <h1 class="text-3xl sm:text-5xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 drop-shadow-[0_0_15px_rgba(0,243,255,0.6)]">
+      NEON DODGER
+    </h1>
+    <p class="text-xs sm:text-sm text-cyan-300 font-semibold tracking-widest mt-1">
+      ⚡ CORREDOR ARCADE ULTRA RÀPID ⚡
+    </p>
+  </header>
 
-        <!-- Canvas del Joc -->
-        <div class="relative w-full flex justify-center bg-black border-x-2 border-cyan-500/40 shadow-2xl overflow-hidden">
-            <canvas id="gameCanvas" width="340" height="540" class="block w-full max-w-[340px] h-[540px] bg-slate-950"></canvas>
+  <!-- MENÚ PRINCIPAL / SELECCIÓ DE MODE -->
+  <div id="main-menu" class="w-full max-w-md glass-panel p-6 rounded-2xl flex flex-col gap-4 shadow-2xl z-20">
+    <h2 class="text-xl font-orbitron text-center text-pink-400 border-b border-pink-500/30 pb-2">TRIA MODE DE JOC</h2>
+    
+    <button onclick="startMode('solo')" class="neon-btn py-3 px-6 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-700 font-orbitron text-lg font-bold hover:from-cyan-500 hover:to-blue-600 border border-cyan-400/50 shadow-lg flex items-center justify-between">
+      <span>👤 MODE SOLITARI</span>
+      <span class="text-xs text-cyan-200">1 Jugador</span>
+    </button>
 
-            <!-- Menú Principal OVERLAY -->
-            <div id="menuOverlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-6 z-20">
-                <div class="text-center mt-4">
-                    <h2 class="font-orbitron text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 tracking-widest mb-1">
-                        NEON DODGER
-                    </h2>
-                    <p class="text-xs text-slate-400 font-semibold tracking-wider">CARRERA ARCADE VERTICAL</p>
-                </div>
+    <button onclick="startMode('local1v1')" class="neon-btn py-3 px-6 rounded-xl bg-gradient-to-r from-pink-600 to-purple-700 font-orbitron text-lg font-bold hover:from-pink-500 hover:to-purple-600 border border-pink-400/50 shadow-lg flex items-center justify-between">
+      <span>⚔️ 1V1 LOCAL SPLIT</span>
+      <span class="text-xs text-pink-200">Mateixa Pantalla</span>
+    </button>
 
-                <!-- Selecció de Mode de Joc -->
-                <div class="flex flex-col gap-3 my-auto">
-                    <button id="btnSolo" onclick="startGame('solo')" class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl font-orbitron font-bold text-sm tracking-wider shadow-lg shadow-cyan-500/20 border border-cyan-400/50 flex items-center justify-between">
-                        <span><i class="fa-solid fa-user mr-2"></i>1 JUGADOR (SOLO)</span>
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+    <button onclick="showOnlineModal()" class="neon-btn py-3 px-6 rounded-xl bg-gradient-to-r from-amber-600 to-orange-700 font-orbitron text-lg font-bold hover:from-amber-500 hover:to-orange-600 border border-amber-400/50 shadow-lg flex items-center justify-between">
+      <span>🌐 1V1 EN LÍNIA</span>
+      <span class="text-xs text-amber-200">PeerJS P2P</span>
+    </button>
 
-                    <button id="btnLocal2P" onclick="startGame('local2p')" class="w-full py-3 px-4 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-xl font-orbitron font-bold text-sm tracking-wider shadow-lg shadow-pink-500/20 border border-pink-400/50 flex items-center justify-between">
-                        <span><i class="fa-solid fa-users mr-2"></i>2 JUGADORS (LOCAL)</span>
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+    <button onclick="showLeaderboard()" class="neon-btn py-2 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 font-orbitron text-sm font-semibold border border-slate-600 text-slate-300 flex items-center justify-center gap-2">
+      🏆 CLASSIFICACIÓ GLOBAL
+    </button>
+  </div>
 
-                    <button id="btnOnline" onclick="openOnlineModal()" class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-orbitron font-bold text-sm tracking-wider shadow-lg shadow-emerald-500/20 border border-emerald-400/50 flex items-center justify-between">
-                        <span><i class="fa-solid fa-globe mr-2"></i>MULTIJUGADOR ONLINE</span>
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-
-                    <button onclick="toggleLeaderboardModal()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-orbitron font-bold text-xs tracking-wider border border-slate-600 text-slate-300 flex items-center justify-center gap-2 mt-2">
-                        <i class="fa-solid fa-trophy text-yellow-400"></i> RÀNQUING MUNDIAL / TOP 10
-                    </button>
-                </div>
-
-                <!-- Controls resumits -->
-                <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800 text-[11px] text-slate-400">
-                    <p class="font-bold text-cyan-400 mb-1">🎮 CONTROLS A ORDINADOR:</p>
-                    <p><b>Jugador 1:</b> WASD (Moure/Frenar) | <b>E:</b> Salt (Max 3) | <b>V:</b> Trencar Mur | <b>Espai:</b> Escut</p>
-                    <p><b>Jugador 2:</b> Fletxes (Moure/Frenar) | <b>Fletxa Amunt:</b> Salt | <b>B:</b> Trencar Mur | <b>Enter:</b> Escut</p>
-                </div>
-            </div>
-
-            <!-- Modal Game Over -->
-            <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-30">
-                <div class="text-center mb-4">
-                    <h2 id="gameOverTitle" class="font-orbitron text-3xl font-black text-pink-500 neon-text-pink mb-1">PARTIDA FINALITZADA</h2>
-                    <p id="winnerSubtitle" class="text-xs text-yellow-400 font-bold tracking-wider"></p>
-                </div>
-
-                <div class="w-full bg-slate-900/90 rounded-xl p-4 border border-slate-800 mb-6 flex flex-col gap-2">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-slate-400">Puntuació Final:</span>
-                        <span id="finalScore" class="font-orbitron font-bold text-2xl text-cyan-400">0</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-slate-400">Millor Puntuació:</span>
-                        <span id="highScore" class="font-orbitron font-bold text-lg text-yellow-400">0</span>
-                    </div>
-                </div>
-
-                <!-- Formulari Desa Puntuació -->
-                <div id="saveScoreBox" class="w-full mb-6">
-                    <label class="block text-xs text-slate-400 mb-1 font-bold">INTRODUEIX EL TEU NOM PER AL RÀNQUING:</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="playerNameInput" maxlength="10" placeholder="JUGADOR" class="flex-1 bg-slate-800 border border-cyan-500/50 rounded-lg px-3 py-2 text-sm font-orbitron text-white focus:outline-none focus:border-cyan-400">
-                        <button onclick="saveScore()" class="bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold px-4 py-2 rounded-lg text-xs tracking-wider">
-                            DESAR
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 w-full">
-                    <button onclick="restartGame()" class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-orbitron font-bold text-xs tracking-wider">
-                        REPETIR <i class="fa-solid fa-rotate-right ml-1"></i>
-                    </button>
-                    <button onclick="showMenu()" class="flex-1 py-3 bg-slate-800 border border-slate-700 rounded-xl font-orbitron font-bold text-xs text-slate-300">
-                        MENÚ <i class="fa-solid fa-house ml-1"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Modal Rànquing Mundial / Local -->
-            <div id="leaderboardOverlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col p-6 z-40">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
-                    <h3 class="font-orbitron text-lg font-bold text-yellow-400 flex items-center gap-2">
-                        <i class="fa-solid fa-trophy"></i> RÀNQUING MUNDIAL
-                    </h3>
-                    <button onclick="toggleLeaderboardModal()" class="text-slate-400 hover:text-white p-1">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
-                </div>
-
-                <div id="leaderboardList" class="flex-1 overflow-y-auto flex flex-col gap-2 my-2 pr-1">
-                    <!-- Contingut generat dinàmicament -->
-                </div>
-
-                <button onclick="toggleLeaderboardModal()" class="w-full py-2.5 bg-slate-800 rounded-lg font-orbitron text-xs font-bold text-slate-300 mt-2">
-                    TANCAR
-                </button>
-            </div>
-
-            <!-- Modal Multijugador Online (PeerJS) -->
-            <div id="onlineOverlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-6 z-40">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="font-orbitron text-lg font-bold text-emerald-400 flex items-center gap-2">
-                        <i class="fa-solid fa-network-wired"></i> MULTIJUGADOR ONLINE
-                    </h3>
-                    <button onclick="closeOnlineModal()" class="text-slate-400 hover:text-white p-1">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
-                </div>
-
-                <div class="flex flex-col gap-4 my-auto">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center">
-                        <p class="text-xs text-slate-400 mb-1">EL TEU CODI DE SALA:</p>
-                        <div class="flex justify-center items-center gap-2">
-                            <span id="myPeerId" class="font-orbitron text-lg font-bold text-emerald-300 bg-slate-950 px-3 py-1 rounded border border-emerald-500/30">...</span>
-                            <button onclick="copyPeerId()" class="p-2 bg-emerald-950 border border-emerald-500/40 rounded hover:bg-emerald-900 text-xs">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <label class="text-xs text-slate-400 font-bold">UNIR-SE A UNA SALA EXISTENT:</label>
-                        <input type="text" id="joinPeerInput" placeholder="Introdueix codi de sala" class="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3 py-2 text-sm font-orbitron text-white focus:outline-none">
-                        <button onclick="connectToPeer()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-orbitron font-bold text-xs tracking-wider">
-                            CONNECTAR I JUGAR
-                        </button>
-                    </div>
-
-                    <div id="onlineStatus" class="text-center text-xs text-amber-400 font-semibold min-h-[20px]">
-                        Esperant connexió...
-                    </div>
-                </div>
-
-                <button onclick="closeOnlineModal()" class="w-full py-2.5 bg-slate-800 rounded-lg font-orbitron text-xs font-bold text-slate-300">
-                    CANCEL·LAR
-                </button>
-            </div>
-        </div>
-
-        <!-- Controls Tàctils en Pantalla per a Mòbil -->
-        <div id="mobileControls" class="w-full max-w-[340px] bg-slate-900/90 rounded-b-xl border-t border-cyan-500/30 p-3 flex flex-col gap-2">
-            <!-- Primera Fila: Accions Especial (Escut, Salt, Trencar) -->
-            <div class="grid grid-cols-3 gap-2">
-                <button id="btnShieldMobile" class="btn-touch py-2.5 rounded-xl flex flex-col items-center justify-center text-cyan-400 active:text-white">
-                    <i class="fa-solid fa-shield-halved text-sm"></i>
-                    <span class="text-[10px] font-orbitron font-bold">ESCUT</span>
-                </button>
-
-                <button id="btnJumpMobile" class="btn-touch py-2.5 rounded-xl flex flex-col items-center justify-center text-yellow-400 active:text-white">
-                    <i class="fa-solid fa-angles-up text-sm"></i>
-                    <span class="text-[10px] font-orbitron font-bold">SALT (<span id="jumpCountTouch">3</span>)</span>
-                </button>
-
-                <button id="btnBreakMobile" class="btn-touch py-2.5 rounded-xl flex flex-col items-center justify-center text-pink-500 active:text-white">
-                    <i class="fa-solid fa-burst text-sm"></i>
-                    <span class="text-[10px] font-orbitron font-bold">TRENCAR (V)</span>
-                </button>
-            </div>
-
-            <!-- Segona Fila: Direcció (Esquerra, Frenar, Dreta) -->
-            <div class="grid grid-cols-3 gap-2">
-                <button id="btnLeftMobile" class="btn-touch py-3 rounded-xl flex justify-center items-center text-cyan-400 active:text-white">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
-                </button>
-
-                <button id="btnBrakeMobile" class="btn-touch py-3 rounded-xl flex justify-center items-center text-amber-500 active:text-white">
-                    <i class="fa-solid fa-hand-stop text-base"></i>
-                </button>
-
-                <button id="btnRightMobile" class="btn-touch py-3 rounded-xl flex justify-center items-center text-cyan-400 active:text-white">
-                    <i class="fa-solid fa-arrow-right text-lg"></i>
-                </button>
-            </div>
-        </div>
+  <!-- CONTENIDOR DE JOC -->
+  <div id="game-container" class="hidden flex-col items-center gap-4 w-full max-w-5xl">
+    
+    <!-- BARRA D'EINES SUPERIOR EN JOC -->
+    <div class="w-full flex items-center justify-between px-2 max-w-2xl">
+      <button onclick="returnToMenu()" class="px-3 py-1 bg-red-900/60 hover:bg-red-800 border border-red-500 text-red-200 rounded-lg text-xs font-orbitron">
+        ← SURT AL MENÚ
+      </button>
+      <div id="biome-indicator" class="font-orbitron text-xs sm:text-sm font-bold text-cyan-300 bg-slate-900/80 px-3 py-1 rounded-full border border-cyan-500/40 animate-pulse">
+        ⚙️ CIUTAT NEON CYBERPUNK
+      </div>
     </div>
 
-    <!-- Codi Lògic del Joc -->
-    <script>
-        // --- CONSTANTS I CONFIGURACIÓ ---
-        const CANVAS_WIDTH = 340;
-        const CANVAS_HEIGHT = 540;
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    <!-- AREA DE CANVASES (JUGADORS) -->
+    <div id="canvases-wrapper" class="flex flex-col md:flex-row gap-6 items-center justify-center w-full">
+      
+      <!-- PLAYER 1 CANVAS & CONTROLS -->
+      <div id="p1-card" class="flex flex-col items-center glass-panel p-3 rounded-2xl border-cyan-500/50 shadow-[0_0_20px_rgba(0,243,255,0.2)]">
+        <div class="w-full flex justify-between items-center mb-1 text-xs font-orbitron font-bold text-cyan-400 px-1">
+          <span id="p1-title">JUGADOR 1</span>
+          <span id="p1-score-display" class="text-yellow-400 text-sm">PUNTS: 0</span>
+        </div>
 
-        // Biomes del Joc
-        const BIOMES = [
-            { name: 'NEON', icon: '⚙️', bg: '#090a0f', wallColor: '#00f3ff', gridColor: 'rgba(0, 243, 255, 0.15)' },
-            { name: 'SELVA', icon: '🌿', bg: '#051a10', wallColor: '#10b981', gridColor: 'rgba(16, 185, 129, 0.15)' },
-            { name: 'DESERT', icon: '🏜️', bg: '#1c0f03', wallColor: '#f59e0b', gridColor: 'rgba(245, 158, 11, 0.15)' },
-            { name: 'OCEÀ', icon: '🌊', bg: '#031326', wallColor: '#3b82f6', gridColor: 'rgba(59, 130, 246, 0.15)' },
-            { name: 'ESPAI', icon: '🪐', bg: '#11052c', wallColor: '#a855f7', gridColor: 'rgba(168, 85, 247, 0.15)' }
-        ];
+        <div class="relative rounded-xl overflow-hidden border-2 border-cyan-500/60 shadow-inner">
+          <canvas id="canvasP1" width="340" height="560" class="block bg-slate-950"></canvas>
+        </div>
 
-        // Estat Global del Joc
-        let gameMode = 'solo'; // 'solo', 'local2p', 'online'
-        let isRunning = false;
-        let score = 0;
-        let baseSpeed = 4;
-        let currentSpeed = 4;
-        let currentBiomeIndex = 0;
-        let screenShake = 0;
+        <!-- CONTROLS TÀCTILS JUGADOR 1 -->
+        <div id="p1-touch-controls" class="w-[340px] mt-3 grid grid-cols-5 gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-700">
+          <button id="p1-btn-left" class="touch-btn h-12 bg-cyan-950 border border-cyan-500/50 rounded-lg text-cyan-300 font-bold text-xl flex items-center justify-center">◄</button>
+          <button id="p1-btn-brake" class="touch-btn h-12 bg-slate-800 border border-slate-600 rounded-lg text-slate-300 font-bold text-xs flex flex-col items-center justify-center">
+            <span>🛑</span><span class="text-[9px]">FRENA</span>
+          </button>
+          <button id="p1-btn-jump" class="touch-btn h-12 bg-indigo-900 border border-indigo-500/60 rounded-lg text-indigo-200 font-bold text-xs flex flex-col items-center justify-center">
+            <span>🦘</span><span class="text-[9px]">SALT</span>
+          </button>
+          <button id="p1-btn-break" class="touch-btn h-12 bg-amber-900/80 border border-amber-500/60 rounded-lg text-amber-200 font-bold text-xs flex flex-col items-center justify-center">
+            <span>💥</span><span class="text-[9px]">TRENCAR</span>
+          </button>
+          <button id="p1-btn-right" class="touch-btn h-12 bg-cyan-950 border border-cyan-500/50 rounded-lg text-cyan-300 font-bold text-xl flex items-center justify-center">►</button>
+          
+          <button id="p1-btn-shield" class="col-span-5 h-10 mt-0.5 bg-cyan-600/40 border border-cyan-400 rounded-lg text-cyan-200 font-orbitron font-bold text-xs flex items-center justify-center gap-2">
+            🛡️ ESCUT (ESPACIO / TAP)
+          </button>
+        </div>
 
-        // Estructures de dades dels Jugadors
-        class Player {
-            constructor(id, x, color, name) {
-                this.id = id;
-                this.x = x;
-                this.y = CANVAS_HEIGHT - 70;
-                this.radius = 16;
-                this.color = color;
-                this.name = name;
-                
-                // Física de Moviment
-                this.vx = 0;
-                this.speed = 5.5;
-                this.friction = 0.85;
+        <div class="mt-2 text-[10px] text-slate-400 text-center font-mono hidden md:block">
+          Teclat: A/D (Mov), S (Frenar), E (Salt), V (Trencar), Espai (Escut)
+        </div>
+      </div>
 
-                // Salt parabòlic millorat
-                this.isJumping = false;
-                this.jumpZ = 0; // Alçada visual del salt
-                this.jumpVy = 0; // Velocitat vertical del salt
-                this.jumpsLeft = 3; // Màxim 3 salts estrictes per partida
+      <!-- PLAYER 2 CANVAS & CONTROLS (MODE 1V1) -->
+      <div id="p2-card" class="hidden flex-col items-center glass-panel p-3 rounded-2xl border-pink-500/50 shadow-[0_0_20px_rgba(255,0,127,0.2)]">
+        <div class="w-full flex justify-between items-center mb-1 text-xs font-orbitron font-bold text-pink-400 px-1">
+          <span id="p2-title">JUGADOR 2</span>
+          <span id="p2-score-display" class="text-yellow-400 text-sm">PUNTS: 0</span>
+        </div>
 
-                // Escut
-                this.shieldCharge = 0; // 0 a 100%
-                this.shieldActive = false;
-                this.shieldTimer = 0;
+        <div class="relative rounded-xl overflow-hidden border-2 border-pink-500/60 shadow-inner">
+          <canvas id="canvasP2" width="340" height="560" class="block bg-slate-950"></canvas>
+        </div>
 
-                // Estat
-                this.isAlive = true;
-                this.eyeOffset = { x: 0, y: 0 };
-                this.blinkTimer = 0;
-                this.isBlinking = false;
-            }
+        <!-- CONTROLS TÀCTILS JUGADOR 2 -->
+        <div id="p2-touch-controls" class="w-[340px] mt-3 grid grid-cols-5 gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-700">
+          <button id="p2-btn-left" class="touch-btn h-12 bg-pink-950 border border-pink-500/50 rounded-lg text-pink-300 font-bold text-xl flex items-center justify-center">◄</button>
+          <button id="p2-btn-brake" class="touch-btn h-12 bg-slate-800 border border-slate-600 rounded-lg text-slate-300 font-bold text-xs flex flex-col items-center justify-center">
+            <span>🛑</span><span class="text-[9px]">FRENA</span>
+          </button>
+          <button id="p2-btn-jump" class="touch-btn h-12 bg-purple-900 border border-purple-500/60 rounded-lg text-purple-200 font-bold text-xs flex flex-col items-center justify-center">
+            <span>🦘</span><span class="text-[9px]">SALT</span>
+          </button>
+          <button id="p2-btn-break" class="touch-btn h-12 bg-amber-900/80 border border-amber-500/60 rounded-lg text-amber-200 font-bold text-xs flex flex-col items-center justify-center">
+            <span>💥</span><span class="text-[9px]">TRENCAR</span>
+          </button>
+          <button id="p2-btn-right" class="touch-btn h-12 bg-pink-950 border border-pink-500/50 rounded-lg text-pink-300 font-bold text-xl flex items-center justify-center">►</button>
+          
+          <button id="p2-btn-shield" class="col-span-5 h-10 mt-0.5 bg-pink-600/40 border border-pink-400 rounded-lg text-pink-200 font-orbitron font-bold text-xs flex items-center justify-center gap-2">
+            🛡️ ESCUT (ENTER / TAP)
+          </button>
+        </div>
 
-            update() {
-                if (!this.isAlive) return;
+        <div class="mt-2 text-[10px] text-slate-400 text-center font-mono hidden md:block">
+          Teclat: Tecles de Direcció (Mov/Frena), Up (Salt), B (Trencar), Enter (Escut)
+        </div>
+      </div>
 
-                // Actualització de posició X
-                this.x += this.vx;
-                this.vx *= this.friction;
+    </div>
+  </div>
 
-                // Límits del canvas
-                if (this.x - this.radius < 10) this.x = 10 + this.radius;
-                if (this.x + this.radius > CANVAS_WIDTH - 10) this.x = CANVAS_WIDTH - 10 - this.radius;
+  <!-- MODAL DE CLASSIFICACIÓ -->
+  <div id="leaderboard-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 rounded-2xl border-yellow-500/40 flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <h3 class="text-xl font-orbitron text-yellow-400 font-bold">🏆 MILLORS PUNTUACIONS</h3>
+        <button onclick="closeModal('leaderboard-modal')" class="text-slate-400 hover:text-white font-bold text-xl">✕</button>
+      </div>
+      <div id="leaderboard-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+        <!-- Es carrega dinàmicament -->
+      </div>
+      <button onclick="closeModal('leaderboard-modal')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-orbitron text-sm mt-2">
+        TANCAR
+      </button>
+    </div>
+  </div>
 
-                // Actualització del Salt Parabòlic (Física fluidificada)
-                if (this.isJumping) {
-                    this.jumpZ += this.jumpVy;
-                    this.jumpVy -= 0.75; // Gravetat fluida
+  <!-- MODAL ONLINE PEERJS -->
+  <div id="online-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 rounded-2xl border-amber-500/40 flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <h3 class="text-xl font-orbitron text-amber-400 font-bold">🌐 MULTIJUGADOR EN LÍNIA</h3>
+        <button onclick="closeModal('online-modal')" class="text-slate-400 hover:text-white font-bold text-xl">✕</button>
+      </div>
 
-                    if (this.jumpZ <= 0) {
-                        this.jumpZ = 0;
-                        this.jumpVy = 0;
-                        this.isJumping = false;
-                    }
-                }
+      <div class="flex flex-col gap-3">
+        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-400 mb-1">EL TEU ID DE JUGADOR:</p>
+          <div class="flex items-center gap-2">
+            <input id="my-peer-id" type="text" readonly value="Generant ID..." class="w-full bg-slate-950 px-3 py-1.5 rounded border border-slate-800 text-xs font-mono text-cyan-300">
+            <button onclick="copyPeerID()" class="px-3 py-1.5 bg-cyan-700 hover:bg-cyan-600 rounded text-xs font-bold">COPIS</button>
+          </div>
+        </div>
 
-                // Actualització de l'Escut
-                if (this.shieldActive) {
-                    this.shieldTimer--;
-                    if (this.shieldTimer <= 0) {
-                        this.shieldActive = false;
-                    }
-                }
+        <div class="flex flex-col gap-2 mt-2">
+          <label class="text-xs text-slate-300 font-semibold">CONNECTA'T A UN AMIC:</label>
+          <input id="remote-peer-id" type="text" placeholder="Enganxa l'ID de l'amic..." class="w-full bg-slate-950 px-3 py-2 rounded-xl border border-amber-500/40 text-sm focus:outline-none focus:border-amber-400 text-amber-200">
+          <button onclick="connectToRemotePeer()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 font-orbitron font-bold text-sm rounded-xl border border-amber-400 shadow-lg">
+            CONNECTAR I JUGAR
+          </button>
+        </div>
 
-                // Animació dels ulls
-                this.eyeOffset.x = (this.vx / this.speed) * 4;
-                
-                this.blinkTimer++;
-                if (this.blinkTimer > 180) {
-                    this.isBlinking = true;
-                    if (this.blinkTimer > 192) {
-                        this.isBlinking = false;
-                        this.blinkTimer = 0;
-                    }
-                }
+        <div id="online-status" class="text-xs text-center font-mono text-slate-400 mt-1">
+          Esperant connexió...
+        </div>
+      </div>
+    </div>
+  </div>
 
-                // Generació de partícules de rastre
-                if (Math.random() < 0.4) {
-                    particles.push(new Particle(this.x, this.y + 10, this.color, (Math.random() - 0.5) * 2, Math.random() * 2 + 1, 10, 3));
-                }
-            }
+  <!-- MODAL DE FI DE JOC -->
+  <div id="gameover-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border-pink-500/50 flex flex-col items-center gap-4 text-center">
+      <h2 id="gameover-title" class="text-2xl font-black font-orbitron text-pink-500 tracking-wider">GAME OVER</h2>
+      <p id="gameover-msg" class="text-sm text-slate-300">Has xocat contra un mur!</p>
 
-            jump() {
-                if (this.jumpsLeft > 0 && !this.isJumping) {
-                    this.isJumping = true;
-                    this.jumpVy = 12.5; // Impuls del salt inicial
-                    this.jumpsLeft--;
-                    createJumpRipple(this.x, this.y);
-                }
-            }
+      <div class="bg-slate-900/90 w-full p-4 rounded-xl border border-slate-700 flex flex-col gap-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400">Puntuació Final:</span>
+          <span id="final-score" class="font-bold text-yellow-400 font-orbitron">0</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400">Bioma Assolit:</span>
+          <span id="final-biome" class="font-bold text-cyan-300 text-xs">CIUTAT NEON</span>
+        </div>
+      </div>
 
-            activateShield() {
-                if (this.shieldCharge >= 100 && !this.shieldActive) {
-                    this.shieldActive = true;
-                    this.shieldCharge = 0;
-                    this.shieldTimer = 300; // 5 segons a 60fps
-                }
-            }
+      <div id="save-score-box" class="w-full flex flex-col gap-2">
+        <input id="player-name-input" type="text" maxlength="12" placeholder="El teu nom / Àlies" class="w-full bg-slate-950 px-3 py-2 rounded-xl border border-cyan-500/50 text-sm font-orbitron text-center text-cyan-300 focus:outline-none">
+        <button onclick="saveCurrentScore()" class="w-full py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 font-orbitron font-bold text-xs rounded-xl border border-cyan-400">
+          GUARDAR PUNTUACIÓ
+        </button>
+      </div>
 
-            draw() {
-                if (!this.isAlive) return;
+      <div class="flex gap-2 w-full mt-2">
+        <button onclick="restartGame()" class="flex-1 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 font-orbitron font-bold text-sm rounded-xl border border-pink-400">
+          TORNAR A JUGAR
+        </button>
+        <button onclick="returnToMenu()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 font-orbitron font-bold text-sm rounded-xl border border-slate-600 text-slate-300">
+          MENÚ
+        </button>
+      </div>
+    </div>
+  </div>
 
-                const drawY = this.y - this.jumpZ;
-                const scale = 1 + (this.jumpZ / 120); // Efecte d'escala amb el salt
+  <script>
+    /* ========================================================================
+       CONFIGURACIÓ DE BIOMES / AMBIENTACIONS (CADA 10 PUNTS)
+       ======================================================================== */
+    const BIOMES = [
+      {
+        minPts: 0,
+        name: "⚙️ CIUTAT NEON CYBERPUNK",
+        bgColor: "#090d16",
+        gridColor: "rgba(0, 243, 255, 0.15)",
+        wallColor: "#00f3ff",
+        particleColor: "rgba(0, 243, 255, 0.8)",
+        type: "cyber",
+        ambientEffect: "rain"
+      },
+      {
+        minPts: 10,
+        name: "🌿 SELVA TROPICAL BIOLUMINESCENT",
+        bgColor: "#05160d",
+        gridColor: "rgba(16, 185, 129, 0.15)",
+        wallColor: "#10b981",
+        particleColor: "rgba(52, 211, 153, 0.9)",
+        type: "forest",
+        ambientEffect: "fireflies"
+      },
+      {
+        minPts: 20,
+        name: "🏜️ DESERT ARDENT RETROWAVE",
+        bgColor: "#1a0818",
+        gridColor: "rgba(245, 158, 11, 0.2)",
+        wallColor: "#f59e0b",
+        particleColor: "rgba(251, 191, 36, 0.8)",
+        type: "retrowave",
+        ambientEffect: "sand"
+      },
+      {
+        minPts: 30,
+        name: "🌊 ABIS OCEÀNIC NEON",
+        bgColor: "#031326",
+        gridColor: "rgba(6, 182, 212, 0.2)",
+        wallColor: "#06b6d4",
+        particleColor: "rgba(165, 243, 252, 0.8)",
+        type: "ocean",
+        ambientEffect: "bubbles"
+      },
+      {
+        minPts: 40,
+        name: "🪐 ESPAI PROFUND VOID",
+        bgColor: "#0c061a",
+        gridColor: "rgba(168, 85, 247, 0.18)",
+        wallColor: "#a855f7",
+        particleColor: "rgba(232, 121, 249, 0.9)",
+        type: "space",
+        ambientEffect: "stars"
+      },
+      {
+        minPts: 50,
+        name: "⚡ HYPER-DIMENSIÓ GOD MODE",
+        bgColor: "#0f051d",
+        gridColor: "rgba(236, 72, 153, 0.25)",
+        wallColor: "#ec4899",
+        particleColor: "rgba(255, 255, 255, 0.95)",
+        type: "hyper",
+        ambientEffect: "hyperwarp"
+      }
+    ];
 
-                ctx.save();
-                ctx.translate(this.x, drawY);
+    function getBiome(score) {
+      for (let i = BIOMES.length - 1; i >= 0; i--) {
+        if (score >= BIOMES[i].minPts) return BIOMES[i];
+      }
+      return BIOMES[0];
+    }
 
-                // Ombra del salt
-                if (this.jumpZ > 0) {
-                    ctx.beginPath();
-                    ctx.ellipse(0, this.jumpZ + 12, this.radius * 0.8, this.radius * 0.3, 0, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                    ctx.fill();
-                }
+    /* ========================================================================
+       ESTAT DEL JOC I VARIABLES GLOBALS
+       ======================================================================== */
+    let gameMode = 'solo'; // 'solo', 'local1v1', 'online'
+    let isGameRunning = false;
+    let animationFrameId = null;
 
-                // Resplendor/Aura de l'escut
-                if (this.shieldActive) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, (this.radius + 8) * scale, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(0, 243, 255, 0.3)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#00f3ff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
+    // Canvas & Contexts
+    const canvasP1 = document.getElementById('canvasP1');
+    const ctxP1 = canvasP1.getContext('2d');
+    const canvasP2 = document.getElementById('canvasP2');
+    const ctxP2 = canvasP2.getContext('2d');
 
-                // Cos principal de la bola
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius * scale, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.lineWidth = 2.5;
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
+    // Controls Teclat
+    const keysPressed = {};
 
-                // Dibuixar Ullys expressius
-                if (!this.isBlinking) {
-                    const eyeDist = 5 * scale;
-                    const eyeR = 3.5 * scale;
-                    const pupilR = 1.8 * scale;
+    // PeerJS Online State
+    let peer = null;
+    let peerConn = null;
+    let isOnlineHost = false;
 
-                    // Ull Esquerre
-                    ctx.beginPath();
-                    ctx.arc(-eyeDist + this.eyeOffset.x, -2 + this.eyeOffset.y, eyeR, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
+    // CLASSE JUGADORS I INSTÀNCIES
+    class PlayerState {
+      constructor(id, isP2 = false) {
+        this.id = id;
+        this.isP2 = isP2;
+        this.reset();
+      }
 
-                    ctx.beginPath();
-                    ctx.arc(-eyeDist + this.eyeOffset.x * 1.3, -2 + this.eyeOffset.y * 1.3, pupilR, 0, Math.PI * 2);
-                    ctx.fillStyle = '#000000';
-                    ctx.fill();
+      reset() {
+        this.x = 170;
+        this.y = 480;
+        this.radius = 16;
+        this.vx = 0;
+        this.speed = 5;
+        this.rotation = 0;
 
-                    // Ull Dret
-                    ctx.beginPath();
-                    ctx.arc(eyeDist + this.eyeOffset.x, -2 + this.eyeOffset.y, eyeR, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
+        this.jumpsLeft = 3; // EXACTAMENT 3 SALTS PER RUN
+        this.isJumping = false;
+        this.jumpArc = 0;
+        this.jumpHeight = 0;
 
-                    ctx.beginPath();
-                    ctx.arc(eyeDist + this.eyeOffset.x * 1.3, -2 + this.eyeOffset.y * 1.3, pupilR, 0, Math.PI * 2);
-                    ctx.fillStyle = '#000000';
-                    ctx.fill();
-                } else {
-                    // Parpelles tancades
-                    ctx.strokeStyle = '#000000';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(-8, -2);
-                    ctx.lineTo(-2, -2);
-                    ctx.moveTo(2, -2);
-                    ctx.lineTo(8, -2);
-                    ctx.stroke();
-                }
+        this.shieldPercent = 0; // 0% a 100%
+        this.isShieldActive = false;
+        this.shieldTimer = 0;
 
-                ctx.restore();
-            }
+        this.score = 0;
+        this.isDead = false;
+
+        this.blinkTimer = 0;
+        this.isBlinking = false;
+        this.eyeDirection = 0; // -1 esquerra, 0 centre, 1 dreta
+
+        this.screenShake = 0;
+        this.particles = [];
+        this.ambientParticles = [];
+        this.initAmbientParticles();
+      }
+
+      initAmbientParticles() {
+        this.ambientParticles = [];
+        for (let i = 0; i < 25; i++) {
+          this.ambientParticles.push({
+            x: Math.random() * 340,
+            y: Math.random() * 560,
+            size: Math.random() * 3 + 1,
+            speedY: Math.random() * 1.5 + 0.5,
+            speedX: (Math.random() - 0.5) * 0.5,
+            alpha: Math.random() * 0.7 + 0.3
+          });
         }
+      }
+    }
 
-        // Instàncies dels Jugadors
-        let players = [];
+    let p1 = new PlayerState(1);
+    let p2 = new PlayerState(2, true);
 
-        // Obstacles i Orbes
-        let obstacles = [];
-        let goldenOrbs = [];
-        let particles = [];
-        let gridOffsetY = 0;
+    // ESTRUCTURA D'OBSTACLES I ORBS
+    let obstaclesP1 = [];
+    let obstaclesP2 = [];
+    let gameSpeed = 3.5;
+    let spawnTimerP1 = 0;
+    let spawnTimerP2 = 0;
 
-        // Classes d'Obstacles
-        class Obstacle {
-            constructor(y, type) {
-                this.y = y;
-                this.height = 18;
-                this.type = type; // 'standard', 'breakable', 'giant_red'
-                this.passed = false;
+    /* ========================================================================
+       SISTEMA DE CONTROL I ESDEVENIMENTS
+       ======================================================================== */
+    window.addEventListener('keydown', (e) => {
+      keysPressed[e.code] = true;
 
-                if (type === 'standard') {
-                    this.gapWidth = 85;
-                    this.gapX = Math.random() * (CANVAS_WIDTH - this.gapWidth - 40) + 20;
-                } else if (type === 'breakable') {
-                    this.gapWidth = 0; // Sòlid complet
-                    this.gapX = 0;
-                    this.isBroken = false;
-                } else if (type === 'giant_red') {
-                    this.height = 35; // Mur més alt/ample no saltables amb salt estàndard
-                    this.gapWidth = 65;
-                    this.gapX = Math.random() * (CANVAS_WIDTH - this.gapWidth - 40) + 20;
-                }
-            }
+      // P1 Actions unies a Tecles (E=Jump, V=Break, Space=Shield)
+      if (isGameRunning) {
+        if (e.code === 'KeyE') triggerJump(p1);
+        if (e.code === 'KeyV') triggerBreakWall(p1, obstaclesP1);
+        if (e.code === 'Space') triggerShield(p1);
 
-            update(speed) {
-                this.y += speed;
-            }
-
-            draw() {
-                const currentBiome = BIOMES[currentBiomeIndex];
-
-                if (this.type === 'standard') {
-                    ctx.fillStyle = currentBiome.wallColor;
-                    ctx.shadowColor = currentBiome.wallColor;
-                    ctx.shadowBlur = 10;
-
-                    // Part esquerra del mur
-                    ctx.fillRect(0, this.y, this.gapX, this.height);
-                    // Part dreta del mur
-                    ctx.fillRect(this.gapX + this.gapWidth, this.y, CANVAS_WIDTH - (this.gapX + this.gapWidth), this.height);
-                    ctx.shadowBlur = 0;
-
-                } else if (this.type === 'breakable') {
-                    if (this.isBroken) return;
-                    ctx.fillStyle = '#ec4899'; // Mur rosa trencable
-                    ctx.shadowColor = '#ec4899';
-                    ctx.shadowBlur = 12;
-                    ctx.fillRect(0, this.y, CANVAS_WIDTH, this.height);
-                    
-                    // Línies de detall de mur trencable
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(CANVAS_WIDTH * 0.3, this.y); ctx.lineTo(CANVAS_WIDTH * 0.35, this.y + this.height);
-                    ctx.moveTo(CANVAS_WIDTH * 0.7, this.y); ctx.lineTo(CANVAS_WIDTH * 0.65, this.y + this.height);
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-
-                } else if (this.type === 'giant_red') {
-                    ctx.fillStyle = '#ef4444'; // Vermell gegant
-                    ctx.shadowColor = '#ef4444';
-                    ctx.shadowBlur = 15;
-
-                    ctx.fillRect(0, this.y, this.gapX, this.height);
-                    ctx.fillRect(this.gapX + this.gapWidth, this.y, CANVAS_WIDTH - (this.gapX + this.gapWidth), this.height);
-                    
-                    // Pattern de perill
-                    ctx.fillStyle = '#000000';
-                    for (let x = 0; x < CANVAS_WIDTH; x += 20) {
-                        if (x < this.gapX || x > this.gapX + this.gapWidth) {
-                            ctx.fillRect(x, this.y + 4, 10, this.height - 8);
-                        }
-                    }
-                    ctx.shadowBlur = 0;
-                }
-            }
+        // P2 Actions unies a Tecles (ArrowUp=Jump, KeyB=Break, Enter=Shield)
+        if (gameMode === 'local1v1') {
+          if (e.code === 'ArrowUp') triggerJump(p2);
+          if (e.code === 'KeyB') triggerBreakWall(p2, obstaclesP2);
+          if (e.code === 'Enter') triggerShield(p2);
         }
+      }
+    });
 
-        // Classe per als Orbes Daurats (Carrega d'escut)
-        class GoldenOrb {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 9;
-                this.collected = false;
-                this.pulse = 0;
-            }
+    window.addEventListener('keyup', (e) => {
+      keysPressed[e.code] = false;
+    });
 
-            update(speed) {
-                this.y += speed;
-                this.pulse += 0.08;
-            }
+    // VINCULACIÓ DE BOTONS TÀCTILS
+    function bindTouchControls(playerNum, pObj, obsArray) {
+      const prefix = `p${playerNum}-btn-`;
+      
+      const btnL = document.getElementById(prefix + 'left');
+      const btnR = document.getElementById(prefix + 'right');
+      const btnBrake = document.getElementById(prefix + 'brake');
+      const btnJump = document.getElementById(prefix + 'jump');
+      const btnBreak = document.getElementById(prefix + 'break');
+      const btnShield = document.getElementById(prefix + 'shield');
 
-            draw() {
-                if (this.collected) return;
-                const r = this.radius + Math.sin(this.pulse) * 2;
+      if (!btnL) return;
 
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-                ctx.fillStyle = '#eab308';
-                ctx.shadowColor = '#facc15';
-                ctx.shadowBlur = 12;
-                ctx.fill();
+      const bindPress = (elem, key) => {
+        elem.addEventListener('touchstart', (e) => { e.preventDefault(); keysPressed[key] = true; });
+        elem.addEventListener('touchend', (e) => { e.preventDefault(); keysPressed[key] = false; });
+        elem.addEventListener('mousedown', () => { keysPressed[key] = true; });
+        elem.addEventListener('mouseup', () => { keysPressed[key] = false; });
+      };
 
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                ctx.restore();
-            }
+      if (playerNum === 1) {
+        bindPress(btnL, 'KeyA');
+        bindPress(btnR, 'KeyD');
+        bindPress(btnBrake, 'KeyS');
+      } else {
+        bindPress(btnL, 'ArrowLeft');
+        bindPress(btnR, 'ArrowRight');
+        bindPress(btnBrake, 'ArrowDown');
+      }
+
+      btnJump.addEventListener('click', () => triggerJump(pObj));
+      btnJump.addEventListener('touchstart', (e) => { e.preventDefault(); triggerJump(pObj); });
+
+      btnBreak.addEventListener('click', () => triggerBreakWall(pObj, obsArray));
+      btnBreak.addEventListener('touchstart', (e) => { e.preventDefault(); triggerBreakWall(pObj, obsArray); });
+
+      btnShield.addEventListener('click', () => triggerShield(pObj));
+      btnShield.addEventListener('touchstart', (e) => { e.preventDefault(); triggerShield(pObj); });
+    }
+
+    bindTouchControls(1, p1, obstaclesP1);
+    bindTouchControls(2, p2, obstaclesP2);
+
+    /* ========================================================================
+       ACCIONS DEL JUGADOR (SALT, ESCUT, TRENCAR)
+       ======================================================================== */
+    function triggerJump(p) {
+      if (!p.isJumping && p.jumpsLeft > 0 && !p.isDead) {
+        p.isJumping = true;
+        p.jumpsLeft--;
+        p.jumpArc = 0;
+        createParticles(p.x, p.y, '#00f3ff', 12);
+      }
+    }
+
+    function triggerShield(p) {
+      if (p.shieldPercent >= 100 && !p.isShieldActive && !p.isDead) {
+        p.isShieldActive = true;
+        p.shieldPercent = 0;
+        p.shieldTimer = 300; // ~5 segons de protecció
+        createParticles(p.x, p.y, '#38bdf8', 20);
+      }
+    }
+
+    function triggerBreakWall(p, obsList) {
+      if (p.isDead) return;
+
+      // Cerca el mur breakable o giant red wall més proper per davant del jugador
+      let hitAny = false;
+      for (let obs of obsList) {
+        if (obs.type === 'breakable' || obs.type === 'giant') {
+          // Si està a rang de destrucció frontal
+          if (obs.y > p.y - 120 && obs.y < p.y + 40) {
+            obs.destroyed = true;
+            hitAny = true;
+            p.screenShake = 12;
+            createExplosion(obs.x + obs.w / 2, obs.y + obs.h / 2, obs.type === 'giant' ? '#ef4444' : '#f59e0b');
+          }
         }
+      }
+      if (hitAny) {
+        createParticles(p.x, p.y - 10, '#fbbf24', 15);
+      }
+    }
 
-        // Partícules
-        class Particle {
-            constructor(x, y, color, vx, vy, life, size = 3) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.vx = vx;
-                this.vy = vy;
-                this.life = life;
-                this.maxLife = life;
-                this.size = size;
-            }
+    /* ========================================================================
+       GENERACIÓ D'OBSTACLES I ORBS
+       ======================================================================== */
+    function spawnObstacle(obsList, score) {
+      const types = ['standard', 'breakable', 'giant', 'orb'];
+      const rand = Math.random();
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life--;
-            }
+      let type = 'standard';
+      if (rand < 0.40) type = 'standard';
+      else if (rand < 0.65) type = 'breakable';
+      else if (rand < 0.82) type = 'giant';
+      else type = 'orb'; // Golden Orb
 
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function createJumpRipple(x, y) {
-            for (let i = 0; i < 12; i++) {
-                const angle = (Math.PI * 2 / 12) * i;
-                particles.push(new Particle(x, y, '#00f3ff', Math.cos(angle) * 3, Math.sin(angle) * 3, 15, 2.5));
-            }
-        }
-
-        function createExplosion(x, y, color) {
-            screenShake = 12;
-            for (let i = 0; i < 30; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 6 + 2;
-                particles.push(new Particle(x, y, color, Math.cos(angle) * speed, Math.sin(angle) * speed, 30, Math.random() * 4 + 2));
-            }
-        }
-
-        // --- SISTEMA DE CONTROLS DE TECLAT ---
-        const keys = {};
-
-        window.addEventListener('keydown', (e) => {
-            keys[e.code] = true;
-            handleGameInput();
+      if (type === 'standard') {
+        const gapWidth = 85;
+        const gapX = Math.random() * (340 - gapWidth - 40) + 20;
+        obsList.push({
+          type: 'standard',
+          y: -40,
+          h: 22,
+          gapX: gapX,
+          gapW: gapWidth,
+          passed: false
         });
-
-        window.addEventListener('keyup', (e) => {
-            keys[e.code] = false;
+      } else if (type === 'breakable') {
+        obsList.push({
+          type: 'breakable',
+          y: -40,
+          w: 260,
+          h: 24,
+          x: 40,
+          destroyed: false,
+          passed: false
         });
+      } else if (type === 'giant') {
+        // GIANT RED WALL: Unjumpable, ocupa quasi tota la via
+        obsList.push({
+          type: 'giant',
+          y: -70,
+          w: 280,
+          h: 55,
+          x: 30,
+          destroyed: false,
+          passed: false
+        });
+      } else if (type === 'orb') {
+        obsList.push({
+          type: 'orb',
+          x: Math.random() * 260 + 40,
+          y: -30,
+          radius: 12,
+          collected: false
+        });
+      }
+    }
 
-        function handleGameInput() {
-            if (!isRunning) return;
+    /* ========================================================================
+       PARTÍCULES I EFECTES VISUALS
+       ======================================================================== */
+    function createParticles(x, y, color, count) {
+      const pArray = gameMode === 'local1v1' && p2.x === x ? p2.particles : p1.particles;
+      for (let i = 0; i < count; i++) {
+        pArray.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          radius: Math.random() * 3 + 1,
+          color: color,
+          life: 25
+        });
+      }
+    }
 
-            // --- JUGADOR 1 CONTROLS (WASD + E + V + ESPAI) ---
-            const p1 = players[0];
-            if (p1 && p1.isAlive) {
-                if (keys['KeyE']) p1.jump();
-                if (keys['Space']) p1.activateShield();
-                if (keys['KeyV']) tryBreakWall(p1);
-            }
+    function createExplosion(x, y, color) {
+      for (let i = 0; i < 25; i++) {
+        p1.particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 10,
+          vy: (Math.random() - 0.5) * 10,
+          radius: Math.random() * 4 + 2,
+          color: color,
+          life: 35
+        });
+      }
+    }
 
-            // --- JUGADOR 2 CONTROLS (FLETXES + B + ENTER) ---
-            const p2 = players[1];
-            if (p2 && p2.isAlive) {
-                if (keys['ArrowUp']) p2.jump();
-                if (keys['Enter']) p2.activateShield();
-                if (keys['KeyB']) tryBreakWall(p2);
-            }
+    /* ========================================================================
+       RENDERITZAT DE CANVASES I DIBUIX DE BIOMES
+       ======================================================================== */
+    function renderPlayerCanvas(ctx, p, obstacles) {
+      const currentBiome = getBiome(p.score);
+
+      // Gestió Screen Shake
+      ctx.save();
+      if (p.screenShake > 0) {
+        const dx = (Math.random() - 0.5) * p.screenShake;
+        const dy = (Math.random() - 0.5) * p.screenShake;
+        ctx.translate(dx, dy);
+        p.screenShake *= 0.85;
+        if (p.screenShake < 0.5) p.screenShake = 0;
+      }
+
+      // 1. FONS DEL BIOMA
+      ctx.fillStyle = currentBiome.bgColor;
+      ctx.fillRect(0, 0, 340, 560);
+
+      // Dibuix Grid dinàmic del bioma
+      ctx.strokeStyle = currentBiome.gridColor;
+      ctx.lineWidth = 1;
+      const gridOffset = (Date.now() * 0.05 * (gameSpeed / 3)) % 40;
+      
+      for (let x = 0; x < 340; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 560);
+        ctx.stroke();
+      }
+      for (let y = gridOffset; y < 560; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(340, y);
+        ctx.stroke();
+      }
+
+      // 2. PARTÍCULES AMBIENTALS DEL BIOMA (Fireflies, Rain, Stars, Sand, Bubbles)
+      ctx.save();
+      for (let ap of p.ambientParticles) {
+        ap.y += ap.speedY * (currentBiome.ambientEffect === 'rain' ? 3 : 1);
+        ap.x += ap.speedX;
+        if (ap.y > 560) { ap.y = -10; ap.x = Math.random() * 340; }
+        if (ap.x < 0 || ap.x > 340) ap.x = Math.random() * 340;
+
+        ctx.fillStyle = currentBiome.particleColor;
+        ctx.globalAlpha = ap.alpha;
+
+        if (currentBiome.ambientEffect === 'rain') {
+          ctx.fillRect(ap.x, ap.y, 1.5, ap.size * 4);
+        } else if (currentBiome.ambientEffect === 'bubbles') {
+          ctx.beginPath();
+          ctx.arc(ap.x, ap.y, ap.size, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(ap.x, ap.y, ap.size, 0, Math.PI * 2);
+          ctx.fill();
         }
+      }
+      ctx.restore();
 
-        function updatePlayerMovement() {
-            // Jugador 1
-            const p1 = players[0];
-            if (p1 && p1.isAlive) {
-                if (keys['KeyA']) p1.vx = -p1.speed;
-                else if (keys['KeyD']) p1.vx = p1.speed;
+      // 3. DIBUIX D'OBSTACLES I ORBS
+      for (let obs of obstacles) {
+        if (obs.type === 'standard') {
+          ctx.fillStyle = currentBiome.wallColor;
+          ctx.shadowColor = currentBiome.wallColor;
+          ctx.shadowBlur = 10;
 
-                if (keys['KeyS']) p1.vx *= 0.5; // Frenar
-            }
+          // Esquerra del mur
+          ctx.fillRect(0, obs.y, obs.gapX, obs.h);
+          // Dreta del mur
+          ctx.fillRect(obs.gapX + obs.gapW, obs.y, 340 - (obs.gapX + obs.gapW), obs.h);
+          ctx.shadowBlur = 0;
+        } else if (obs.type === 'breakable') {
+          if (!obs.destroyed) {
+            ctx.fillStyle = '#f59e0b';
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
-            // Jugador 2
-            const p2 = players[1];
-            if (p2 && p2.isAlive) {
-                if (keys['ArrowLeft']) p2.vx = -p2.speed;
-                else if (keys['ArrowRight']) p2.vx = p2.speed;
-
-                if (keys['ArrowDown']) p2.vx *= 0.5; // Frenar
-            }
-        }
-
-        // Acció de trencar mur trencable
-        function tryBreakWall(player) {
-            obstacles.forEach(obs => {
-                if (obs.type === 'breakable' && !obs.isBroken) {
-                    if (Math.abs(obs.y - player.y) < 55) {
-                        obs.isBroken = true;
-                        createExplosion(player.x, obs.y + 9, '#ec4899');
-                    }
-                }
-            });
-        }
-
-        // --- CONTROLS TÀCTILS PER A MÒBIL ---
-        function setupMobileControls() {
-            const btnLeft = document.getElementById('btnLeftMobile');
-            const btnRight = document.getElementById('btnRightMobile');
-            const btnBrake = document.getElementById('btnBrakeMobile');
-            const btnJump = document.getElementById('btnJumpMobile');
-            const btnShield = document.getElementById('btnShieldMobile');
-            const btnBreak = document.getElementById('btnBreakMobile');
-
-            const getP1 = () => players[0];
-
-            btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) getP1().vx = -getP1().speed; });
-            btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) getP1().vx = getP1().speed; });
-            btnBrake.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) getP1().vx *= 0.4; });
-
-            btnLeft.addEventListener('mousedown', () => { if (getP1()) getP1().vx = -getP1().speed; });
-            btnRight.addEventListener('mousedown', () => { if (getP1()) getP1().vx = getP1().speed; });
-
-            btnJump.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) getP1().jump(); });
-            btnJump.addEventListener('click', () => { if (getP1()) getP1().jump(); });
-
-            btnShield.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) getP1().activateShield(); });
-            btnShield.addEventListener('click', () => { if (getP1()) getP1().activateShield(); });
-
-            btnBreak.addEventListener('touchstart', (e) => { e.preventDefault(); if (getP1()) tryBreakWall(getP1()); });
-            btnBreak.addEventListener('click', () => { if (getP1()) tryBreakWall(getP1()); });
-        }
-
-        // --- INICI I GESTIÓ DE PARTIDA ---
-        function startGame(mode) {
-            gameMode = mode;
-            score = 0;
-            currentBiomeIndex = 0;
-            currentSpeed = baseSpeed;
-            obstacles = [];
-            goldenOrbs = [];
-            particles = [];
-
-            // Inicialització dels jugadors segons mode
-            players = [];
-            if (mode === 'solo') {
-                players.push(new Player(1, CANVAS_WIDTH / 2, '#00f3ff', 'Jugador 1'));
-            } else if (mode === 'local2p' || mode === 'online') {
-                players.push(new Player(1, CANVAS_WIDTH / 3, '#00f3ff', 'Jugador 1'));
-                players.push(new Player(2, (CANVAS_WIDTH / 3) * 2, '#ff007f', 'Jugador 2'));
-            }
-
-            document.getElementById('menuOverlay').classList.add('hidden');
-            document.getElementById('gameOverOverlay').classList.add('hidden');
-            document.getElementById('onlineOverlay').classList.add('hidden');
-
-            updateBiomeUI();
-            isRunning = true;
-            requestAnimationFrame(gameLoop);
-        }
-
-        function updateBiomeUI() {
-            const biome = BIOMES[currentBiomeIndex];
-            const badge = document.getElementById('biome-badge');
-            badge.innerText = `${biome.icon} ${biome.name}`;
-        }
-
-        // --- BUCLE PRINCIPAL DEL JOC ---
-        let lastTime = 0;
-        let obstacleSpawnTimer = 0;
-
-        function gameLoop(timestamp) {
-            if (!isRunning) return;
-
-            // Neteja i efecte Tremolor de Pantalla
-            ctx.save();
-            if (screenShake > 0) {
-                const rx = (Math.random() - 0.5) * screenShake;
-                const ry = (Math.random() - 0.5) * screenShake;
-                ctx.translate(rx, ry);
-                screenShake *= 0.85;
-                if (screenShake < 0.5) screenShake = 0;
-            }
-
-            // Dibuix Fons del Bioma
-            const currentBiome = BIOMES[currentBiomeIndex];
-            ctx.fillStyle = currentBiome.bg;
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            // Dibuixar Reixeta Desplaçable en perspectiva
-            gridOffsetY = (gridOffsetY + currentSpeed) % 30;
-            ctx.strokeStyle = currentBiome.gridColor;
-            ctx.lineWidth = 1;
-
-            for (let x = 0; x <= CANVAS_WIDTH; x += 30) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, CANVAS_HEIGHT);
-                ctx.stroke();
-            }
-            for (let y = gridOffsetY; y <= CANVAS_HEIGHT; y += 30) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(CANVAS_WIDTH, y);
-                ctx.stroke();
-            }
-
-            // Actualitzar moviments de teclat continu
-            updatePlayerMovement();
-
-            // Generació d'obstacles
-            obstacleSpawnTimer += currentSpeed;
-            if (obstacleSpawnTimer > 150) {
-                obstacleSpawnTimer = 0;
-                
-                // Selecció aleatòria del tipus de mur
-                const rand = Math.random();
-                let type = 'standard';
-                if (rand > 0.7) type = 'breakable';
-                else if (rand > 0.45) type = 'giant_red';
-
-                obstacles.push(new Obstacle(-40, type));
-
-                // Possibilitat de generar un Orbe Daurat
-                if (Math.random() < 0.45) {
-                    goldenOrbs.push(new GoldenOrb(Math.random() * (CANVAS_WIDTH - 60) + 30, -90));
-                }
-            }
-
-            // Actualització i Dibuix de Murs
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                obs.update(currentSpeed);
-                obs.draw();
-
-                // Increment de puntuació en superar
-                if (!obs.passed && obs.y > CANVAS_HEIGHT - 50) {
-                    obs.passed = true;
-                    score++;
-                    currentSpeed = baseSpeed + (score * 0.12); // Dificultat progressiva
-
-                    // Canvi de bioma cada 10 punts
-                    const newBiomeIndex = Math.floor(score / 10) % BIOMES.length;
-                    if (newBiomeIndex !== currentBiomeIndex) {
-                        currentBiomeIndex = newBiomeIndex;
-                        updateBiomeUI();
-                    }
-                }
-
-                // Detecció de Col·lisió amb Jugadors
-                players.forEach(p => {
-                    if (p.isAlive) {
-                        checkCollision(p, obs);
-                    }
-                });
-
-                // Eliminar obstacles fora de pantalla
-                if (obs.y > CANVAS_HEIGHT + 50) {
-                    obstacles.splice(i, 1);
-                }
-            }
-
-            // Actualització i Dibuix d'Orbes Daurats
-            for (let i = goldenOrbs.length - 1; i >= 0; i--) {
-                const orb = goldenOrbs[i];
-                orb.update(currentSpeed);
-                orb.draw();
-
-                // Recollida per part dels jugadors
-                players.forEach(p => {
-                    if (p.isAlive && !orb.collected) {
-                        const dist = Math.hypot(p.x - orb.x, p.y - orb.y);
-                        if (dist < p.radius + orb.radius) {
-                            orb.collected = true;
-                            p.shieldCharge = Math.min(100, p.shieldCharge + 15); // +15% per orbe
-                            createExplosion(orb.x, orb.y, '#facc15');
-                        }
-                    }
-                });
-
-                if (orb.y > CANVAS_HEIGHT + 30 || orb.collected) {
-                    goldenOrbs.splice(i, 1);
-                }
-            }
-
-            // Actualització i Dibuix de Partícules
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const pt = particles[i];
-                pt.update();
-                pt.draw();
-                if (pt.life <= 0) particles.splice(i, 1);
-            }
-
-            // Actualització i Dibuix dels Jugadors
-            players.forEach(p => {
-                p.update();
-                p.draw();
-            });
-
-            // Actualitzar el botó tàctil de salts del P1
-            if (players[0]) {
-                document.getElementById('jumpCountTouch').innerText = players[0].jumpsLeft;
-            }
-
-            // HUD del Joc (Puntuació i estat d'escut)
-            drawHUD();
-
-            ctx.restore();
-
-            // Comprovació de Game Over
-            const alivePlayers = players.filter(p => p.isAlive);
-            if (alivePlayers.length === 0) {
-                endGame();
-                return;
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // --- SISTEMA DE COL·LISIONS ---
-        function checkCollision(player, obs) {
-            // Un mur trencable destructurat no col·lisiona
-            if (obs.type === 'breakable' && obs.isBroken) return;
-
-            // Si el jugador té escut actiu, destrueix el mur al contacte
-            const isCollidingY = (player.y + player.radius > obs.y) && (player.y - player.radius < obs.y + obs.height);
-
-            if (!isCollidingY) return;
-
-            if (player.shieldActive) {
-                if (obs.type === 'breakable') obs.isBroken = true;
-                createExplosion(player.x, player.y, '#00f3ff');
-                return;
-            }
-
-            let hitsWall = false;
-
-            if (obs.type === 'standard') {
-                // Un salt estàndard esquiva els murs estàndards
-                const isJumpingOver = player.isJumping && player.jumpZ > 22;
-                const inGap = (player.x - player.radius > obs.gapX) && (player.x + player.radius < obs.gapX + obs.gapWidth);
-
-                if (!inGap && !isJumpingOver) {
-                    hitsWall = true;
-                }
-            } else if (obs.type === 'breakable') {
-                // Mur sòlid sense forat. Només es pot trencar amb V/B o Escut
-                hitsWall = true;
-            } else if (obs.type === 'giant_red') {
-                // Mur Gegant Vermell. El salt normal NO el supera
-                const inGap = (player.x - player.radius > obs.gapX) && (player.x + player.radius < obs.gapX + obs.gapWidth);
-                if (!inGap) {
-                    hitsWall = true;
-                }
-            }
-
-            if (hitsWall) {
-                player.isAlive = false;
-                createExplosion(player.x, player.y, player.color);
-            }
-        }
-
-        // --- DIBUIX DE LA INTERFÍCIE HUD ---
-        function drawHUD() {
-            // Puntuació
-            ctx.font = 'bold 22px Orbitron, sans-serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowColor = '#00f3ff';
-            ctx.shadowBlur = 8;
-            ctx.fillText(`PUNTS: ${score}`, 15, 35);
+            // Text / icona al mur de trencament
+            ctx.fillStyle = '#000';
+            ctx.font = '900 12px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText("⚡ PREM 'V' / TRENCAR ⚡", 170, obs.y + 16);
             ctx.shadowBlur = 0;
+          }
+        } else if (obs.type === 'giant') {
+          if (!obs.destroyed) {
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 20;
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
-            // Barres d'escut dels Jugadors
-            players.forEach((p, idx) => {
-                const xOffset = 15 + (idx * 165);
-                const yOffset = 48;
+            // Detall estètic Giant Wall
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 13px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText("⚠️ MUR GEGANT VERMELL ⚠️", 170, obs.y + 32);
+            ctx.shadowBlur = 0;
+          }
+        } else if (obs.type === 'orb') {
+          if (!obs.collected) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fbbf24';
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
 
-                // Fons barra
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-                ctx.fillRect(xOffset, yOffset, 145, 10);
-                ctx.strokeStyle = p.color;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(xOffset, yOffset, 145, 10);
+      // 4. PARTÍCULES D'IMPACTE / SALTS
+      for (let i = p.particles.length - 1; i >= 0; i--) {
+        let pt = p.particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life--;
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+        ctx.fill();
+        if (pt.life <= 0) p.particles.splice(i, 1);
+      }
 
-                // Carrega d'escut
-                const fillW = (p.shieldCharge / 100) * 145;
-                ctx.fillStyle = p.shieldActive ? '#00f3ff' : '#eab308';
-                ctx.fillRect(xOffset, yOffset, fillW, 10);
+      // 5. DIBUIX DEL PERSONATGE (BOLA DE NEON AMB ULLS EXPRESSIUS)
+      ctx.save();
+      const currentY = p.y - p.jumpHeight;
 
-                // Etiqueta
-                ctx.font = 'bold 9px Orbitron, sans-serif';
-                ctx.fillStyle = '#cbd5e1';
-                ctx.fillText(`${p.name} ESCUT: ${p.shieldActive ? 'ACTIU!' : Math.floor(p.shieldCharge) + '%'}`, xOffset, yOffset - 3);
-            });
+      // Particle Trail de la bola
+      if (!p.isDead) {
+        p.particles.push({
+          x: p.x + (Math.random() - 0.5) * 8,
+          y: currentY + p.radius,
+          vx: 0,
+          vy: 2,
+          radius: 3,
+          color: p.isShieldActive ? '#38bdf8' : currentBiome.wallColor,
+          life: 12
+        });
+      }
+
+      // Aura d'escut
+      if (p.isShieldActive) {
+        ctx.beginPath();
+        ctx.arc(p.x, currentY, p.radius + 8, 0, Math.PI * 2);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+      }
+
+      // Cos de la Bola
+      ctx.translate(p.x, currentY);
+      ctx.rotate(p.rotation);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+      const ballGrad = ctx.createRadialGradient(-3, -3, 2, 0, 0, p.radius);
+      ballGrad.addColorStop(0, '#ffffff');
+      ballGrad.addColorStop(0.5, p.isP2 ? '#ec4899' : '#00f3ff');
+      ballGrad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = ballGrad;
+      ctx.shadowColor = p.isP2 ? '#ec4899' : '#00f3ff';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Ulls Expressius de la Bola (Parpelleig i direcció)
+      p.blinkTimer++;
+      if (p.blinkTimer > 180) {
+        p.isBlinking = true;
+        if (p.blinkTimer > 192) { p.isBlinking = false; p.blinkTimer = 0; }
+      }
+
+      const eyeOffset = p.eyeDirection * 3;
+      ctx.fillStyle = '#0f172a';
+
+      if (p.isBlinking) {
+        // Ulls tancats
+        ctx.fillRect(-7 + eyeOffset, -2, 5, 2);
+        ctx.fillRect(2 + eyeOffset, -2, 5, 2);
+      } else {
+        // Ulls oberts expressius
+        ctx.beginPath();
+        ctx.arc(-4 + eyeOffset, -3, 3.5, 0, Math.PI * 2);
+        ctx.arc(4 + eyeOffset, -3, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Llum interna als ulls
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-5 + eyeOffset, -4, 1.2, 0, Math.PI * 2);
+        ctx.arc(3 + eyeOffset, -4, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // 6. HUD I INDICADORS INTEGRATS AL CANVAS
+      // SALTS RESTANTS (HUD strict 3 Jumps Limit)
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.fillRect(10, 10, 110, 26);
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.strokeRect(10, 10, 110, 26);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '700 11px Orbitron';
+      ctx.textAlign = 'left';
+      ctx.fillText(`SALTS: ${p.jumpsLeft}/3`, 18, 27);
+
+      // BARRA D'ESCUT
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.fillRect(215, 10, 115, 26);
+      ctx.strokeRect(215, 10, 115, 26);
+
+      ctx.fillStyle = p.shieldPercent >= 100 ? '#38bdf8' : '#64748b';
+      ctx.fillRect(218, 13, (109 * (p.shieldPercent / 100)), 20);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 10px Orbitron';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.shieldPercent >= 100 ? 'ESCUT AART!' : `ESCUT: ${Math.floor(p.shieldPercent)}%`, 272, 27);
+
+      ctx.restore();
+    }
+
+    /* ========================================================================
+       LÒGICA DEL JOC, MOVIMENT I COL·LISIONS
+       ======================================================================== */
+    function updatePlayer(p, isP2Controls, obsList) {
+      if (p.isDead) return;
+
+      // Actualització de Velocitat Horitzontal
+      const leftKey = isP2Controls ? keysPressed['ArrowLeft'] : keysPressed['KeyA'];
+      const rightKey = isP2Controls ? keysPressed['ArrowRight'] : keysPressed['KeyD'];
+      const brakeKey = isP2Controls ? keysPressed['ArrowDown'] : keysPressed['KeyS'];
+
+      if (leftKey) {
+        p.vx = -p.speed;
+        p.eyeDirection = -1;
+      } else if (rightKey) {
+        p.vx = p.speed;
+        p.eyeDirection = 1;
+      } else {
+        p.vx *= 0.8;
+        p.eyeDirection = 0;
+      }
+
+      // Frena (Brake)
+      if (brakeKey) {
+        p.vx *= 0.4;
+      }
+
+      p.x += p.vx;
+      p.rotation += p.vx * 0.05;
+
+      // Límits visuals del canvas
+      if (p.x - p.radius < 10) p.x = 10 + p.radius;
+      if (p.x + p.radius > 330) p.x = 330 - p.radius;
+
+      // Gestió del Salt (Arco Físic)
+      if (p.isJumping) {
+        p.jumpArc += 0.08;
+        p.jumpHeight = Math.sin(p.jumpArc) * 55;
+        if (p.jumpArc >= Math.PI) {
+          p.isJumping = false;
+          p.jumpHeight = 0;
+          p.jumpArc = 0;
+        }
+      }
+
+      // Gestió de Temps d'Escut
+      if (p.isShieldActive) {
+        p.shieldTimer--;
+        if (p.shieldTimer <= 0) {
+          p.isShieldActive = false;
+        }
+      }
+
+      // COL·LISIÓ AMB OBSTACLES
+      for (let obs of obsList) {
+        // Col·lisió amb Orbs d'Or (+15% Escut)
+        if (obs.type === 'orb' && !obs.collected) {
+          const dist = Math.hypot(p.x - obs.x, (p.y - p.jumpHeight) - obs.y);
+          if (dist < p.radius + obs.radius) {
+            obs.collected = true;
+            p.shieldPercent = Math.min(100, p.shieldPercent + 15);
+            createParticles(obs.x, obs.y, '#fbbf24', 10);
+          }
         }
 
-        // --- FINAL DE PARTIDA I RÀNQUING ---
-        function endGame() {
-            isRunning = false;
+        // Increment de Punts al superar obstacles
+        if (!obs.passed && obs.y > p.y) {
+          obs.passed = true;
+          p.score++;
+          // Escalats de velocitat continuous speed scaling
+          gameSpeed = 3.5 + Math.floor(p.score / 5) * 0.4;
+        }
 
-            const finalScoreElem = document.getElementById('finalScore');
-            const highScoreElem = document.getElementById('highScore');
-            const gameOverTitle = document.getElementById('gameOverTitle');
-            const winnerSubtitle = document.getElementById('winnerSubtitle');
+        // COL·LISIONS AMB MURS
+        const ballBottom = p.y - p.jumpHeight + p.radius;
+        const ballTop = p.y - p.jumpHeight - p.radius;
 
-            finalScoreElem.innerText = score;
+        if (obs.y + obs.h > ballTop && obs.y < ballBottom) {
+          
+          if (obs.type === 'standard') {
+            // Standard wall jumpable
+            const inGap = p.x - p.radius > obs.gapX && p.x + p.radius < obs.gapX + obs.gapW;
+            const isHighEnough = p.jumpHeight > 18;
 
-            // Obtenir millor puntuació
-            const savedHighScore = localStorage.getItem('neon_dodger_highscore') || 0;
-            if (score > savedHighScore) {
-                localStorage.setItem('neon_dodger_highscore', score);
-                highScoreElem.innerText = score;
-            } else {
-                highScoreElem.innerText = savedHighScore;
+            if (!inGap && !isHighEnough) {
+              handlePlayerHit(p);
             }
-
-            if (gameMode === 'local2p') {
-                gameOverTitle.innerText = "FI DE LA PARTIDA";
-                winnerSubtitle.innerText = "COMPETICIÓ LOCAL FINALITZADA";
-            } else {
-                gameOverTitle.innerText = "GAME OVER";
-                winnerSubtitle.innerText = "";
+          } else if (obs.type === 'breakable') {
+            if (!obs.destroyed) {
+              handlePlayerHit(p);
             }
-
-            document.getElementById('gameOverOverlay').classList.remove('hidden');
-        }
-
-        function saveScore() {
-            const nameInput = document.getElementById('playerNameInput');
-            const name = nameInput.value.trim().toUpperCase() || 'ANÒNIM';
-
-            let leaderboard = JSON.parse(localStorage.getItem('neon_dodger_leaderboard') || '[]');
-            leaderboard.push({ name: name, score: score, date: new Date().toLocaleDateString() });
-            
-            // Ordenar de major a menor puntuació
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard = leaderboard.slice(0, 10); // Conservar el Top 10
-
-            localStorage.setItem('neon_dodger_leaderboard', JSON.stringify(leaderboard));
-
-            toggleLeaderboardModal();
-        }
-
-        function toggleLeaderboardModal() {
-            const overlay = document.getElementById('leaderboardOverlay');
-            const list = document.getElementById('leaderboardList');
-
-            if (overlay.classList.contains('hidden')) {
-                // Carregar llista
-                const leaderboard = JSON.parse(localStorage.getItem('neon_dodger_leaderboard') || '[]');
-                list.innerHTML = '';
-
-                if (leaderboard.length === 0) {
-                    list.innerHTML = `<div class="text-center text-slate-500 text-xs py-4">Encara no hi ha puntuacions registrades.</div>`;
-                } else {
-                    leaderboard.forEach((item, index) => {
-                        const row = document.createElement('div');
-                        row.className = "flex justify-between items-center bg-slate-900 px-3 py-2 rounded-lg border border-slate-800 text-xs";
-                        row.innerHTML = `
-                            <div class="flex items-center gap-2">
-                                <span class="font-orbitron font-bold ${index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-600' : 'text-slate-500'}">#${index + 1}</span>
-                                <span class="font-bold text-white">${item.name}</span>
-                            </div>
-                            <span class="font-orbitron font-bold text-cyan-400">${item.score} PTS</span>
-                        `;
-                        list.appendChild(row);
-                    });
-                }
-                overlay.classList.remove('hidden');
-            } else {
-                overlay.classList.add('hidden');
+          } else if (obs.type === 'giant') {
+            // GIANT RED WALL: Injumpable normalment (requereix escut o break 'V')
+            if (!obs.destroyed) {
+              handlePlayerHit(p);
             }
+          }
+        }
+      }
+    }
+
+    function handlePlayerHit(p) {
+      if (p.isShieldActive) {
+        p.isShieldActive = false;
+        p.screenShake = 15;
+        createParticles(p.x, p.y, '#38bdf8', 25);
+      } else {
+        p.isDead = true;
+        p.screenShake = 25;
+        createExplosion(p.x, p.y, '#ef4444');
+        setTimeout(() => triggerGameOver(p), 600);
+      }
+    }
+
+    /* ========================================================================
+       BUCLE PRINCIPAL DEL JOC (GAME LOOP)
+       ======================================================================== */
+    function gameLoop() {
+      if (!isGameRunning) return;
+
+      // ACTUALITZAR JUGADOR 1
+      updatePlayer(p1, false, obstaclesP1);
+      
+      // Moure obstacles P1
+      spawnTimerP1++;
+      if (spawnTimerP1 > Math.max(35, 80 - p1.score * 1.5)) {
+        spawnObstacle(obstaclesP1, p1.score);
+        spawnTimerP1 = 0;
+      }
+
+      for (let i = obstaclesP1.length - 1; i >= 0; i--) {
+        obstaclesP1[i].y += gameSpeed;
+        if (obstaclesP1[i].y > 580) obstaclesP1.splice(i, 1);
+      }
+
+      // ACTUALITZAR JUGADOR 2 EN MODE 1V1 LOCAL
+      if (gameMode === 'local1v1') {
+        updatePlayer(p2, true, obstaclesP2);
+        spawnTimerP2++;
+        if (spawnTimerP2 > Math.max(35, 80 - p2.score * 1.5)) {
+          spawnObstacle(obstaclesP2, p2.score);
+          spawnTimerP2 = 0;
         }
 
-        function restartGame() {
-            startGame(gameMode);
+        for (let i = obstaclesP2.length - 1; i >= 0; i--) {
+          obstaclesP2[i].y += gameSpeed;
+          if (obstaclesP2[i].y > 580) obstaclesP2.splice(i, 1);
         }
+      }
 
-        function showMenu() {
-            isRunning = false;
-            document.getElementById('gameOverOverlay').classList.add('hidden');
-            document.getElementById('menuOverlay').classList.remove('hidden');
+      // RENDERITZAR CANVASES
+      renderPlayerCanvas(ctxP1, p1, obstaclesP1);
+      if (gameMode === 'local1v1') {
+        renderPlayerCanvas(ctxP2, p2, obstaclesP2);
+      }
+
+      // ACTUALITZAR TEXT DE PUNTS I BIOMES
+      document.getElementById('p1-score-display').innerText = `PUNTS: ${p1.score}`;
+      if (gameMode === 'local1v1') {
+        document.getElementById('p2-score-display').innerText = `PUNTS: ${p2.score}`;
+      }
+
+      const activeBiome = getBiome(p1.score);
+      document.getElementById('biome-indicator').innerText = activeBiome.name;
+
+      // TRANSMISSIÓ PEERJS ONLINE SI ÉS HOST
+      if (gameMode === 'online' && peerConn && peerConn.open) {
+        peerConn.send({
+          p1State: { x: p1.x, score: p1.score, dead: p1.isDead },
+          obstacles: obstaclesP1
+        });
+      }
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    /* ========================================================================
+       INICI, MODE DE JOC I MENÚS
+       ======================================================================== */
+    function startMode(mode) {
+      gameMode = mode;
+      document.getElementById('main-menu').classList.add('hidden');
+      document.getElementById('game-container').classList.remove('hidden');
+      document.getElementById('game-container').classList.add('flex');
+
+      const p2Card = document.getElementById('p2-card');
+      if (mode === 'local1v1') {
+        p2Card.classList.remove('hidden');
+        p2Card.classList.add('flex');
+      } else {
+        p2Card.classList.add('hidden');
+        p2Card.classList.remove('flex');
+      }
+
+      restartGame();
+    }
+
+    function restartGame() {
+      document.getElementById('gameover-modal').classList.add('hidden');
+
+      p1.reset();
+      p2.reset();
+      obstaclesP1 = [];
+      obstaclesP2 = [];
+      gameSpeed = 3.5;
+      spawnTimerP1 = 0;
+      spawnTimerP2 = 0;
+
+      isGameRunning = true;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      gameLoop();
+    }
+
+    function returnToMenu() {
+      isGameRunning = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      document.getElementById('game-container').classList.add('hidden');
+      document.getElementById('gameover-modal').classList.add('hidden');
+      document.getElementById('main-menu').classList.remove('hidden');
+    }
+
+    function triggerGameOver(p) {
+      isGameRunning = false;
+      const modal = document.getElementById('gameover-modal');
+      const finalBiome = getBiome(p.score);
+
+      document.getElementById('final-score').innerText = p.score;
+      document.getElementById('final-biome').innerText = finalBiome.name;
+      document.getElementById('gameover-msg').innerText = p.id === 1 ? "El Jugador 1 ha xocat!" : "El Jugador 2 ha xocat!";
+
+      modal.classList.remove('hidden');
+    }
+
+    /* ========================================================================
+       CLASSIFICACIÓ PERSISTENT (LOCALSTORAGE)
+       ======================================================================== */
+    function getLeaderboard() {
+      return JSON.parse(localStorage.getItem('neon_dodger_lb') || '[]');
+    }
+
+    function saveCurrentScore() {
+      const nameInput = document.getElementById('player-name-input');
+      const name = nameInput.value.trim() || 'Jugador Anònim';
+      const score = p1.score;
+
+      const lb = getLeaderboard();
+      lb.push({ name, score, date: new Date().toLocaleDateString() });
+      lb.sort((a, b) => b.score - a.score);
+      localStorage.setItem('neon_dodger_lb', JSON.stringify(lb.slice(0, 10)));
+
+      nameInput.value = '';
+      showLeaderboard();
+    }
+
+    function showLeaderboard() {
+      const modal = document.getElementById('leaderboard-modal');
+      const listElem = document.getElementById('leaderboard-list');
+      const lb = getLeaderboard();
+
+      if (lb.length === 0) {
+        listElem.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Encara no hi ha puntuacions registrades.</p>`;
+      } else {
+        listElem.innerHTML = lb.map((entry, idx) => `
+          <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/60 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-bold font-orbitron ${idx === 0 ? 'text-yellow-400' : 'text-slate-400'}">#${idx + 1}</span>
+              <span class="font-semibold text-slate-200">${entry.name}</span>
+            </div>
+            <span class="font-bold font-orbitron text-cyan-300">${entry.score} PTS</span>
+          </div>
+        `).join('');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    /* ========================================================================
+       SISTEMA MULTIJUGADOR PEERJS EN LÍNIA
+       ======================================================================== */
+    function showOnlineModal() {
+      document.getElementById('online-modal').classList.remove('hidden');
+      if (!peer) {
+        initPeer();
+      }
+    }
+
+    function initPeer() {
+      peer = new Peer();
+
+      peer.on('open', (id) => {
+        document.getElementById('my-peer-id').value = id;
+        document.getElementById('online-status').innerText = "ID a punt. Comparteix-lo!";
+      });
+
+      peer.on('connection', (conn) => {
+        peerConn = conn;
+        setupPeerListeners();
+        document.getElementById('online-status').innerText = "Jugador connectat! Iniciant...";
+        setTimeout(() => {
+          closeModal('online-modal');
+          startMode('online');
+        }, 1000);
+      });
+    }
+
+    function connectToRemotePeer() {
+      const remoteId = document.getElementById('remote-peer-id').value.trim();
+      if (!remoteId) return;
+
+      peerConn = peer.connect(remoteId);
+      setupPeerListeners();
+      document.getElementById('online-status').innerText = "Connectant a l'host...";
+    }
+
+    function setupPeerListeners() {
+      peerConn.on('open', () => {
+        document.getElementById('online-status').innerText = "Connexió establerta!";
+        setTimeout(() => {
+          closeModal('online-modal');
+          startMode('online');
+        }, 1000);
+      });
+
+      peerConn.on('data', (data) => {
+        // Si rep informació de l'host
+        if (data.obstacles) {
+          obstaclesP1 = data.obstacles;
         }
+      });
+    }
 
-        // --- INTEGRACIÓ ONLINE MULTIJUGADOR (PEERJS P2P) ---
-        let peer = null;
-        let peerConn = null;
-
-        function openOnlineModal() {
-            document.getElementById('onlineOverlay').classList.remove('hidden');
-            if (!peer) {
-                initPeer();
-            }
-        }
-
-        function closeOnlineModal() {
-            document.getElementById('onlineOverlay').classList.add('hidden');
-        }
-
-        function initPeer() {
-            const statusElem = document.getElementById('onlineStatus');
-            statusElem.innerText = "Connectant al servidor PeerJS...";
-
-            peer = new Peer();
-
-            peer.on('open', (id) => {
-                document.getElementById('myPeerId').innerText = id;
-                statusElem.innerText = "Sala creada. Comparteix el teu codi!";
-            });
-
-            peer.on('connection', (conn) => {
-                peerConn = conn;
-                setupPeerEvents();
-                statusElem.innerText = "Jugador connectat! Iniciant partida...";
-                setTimeout(() => startGame('online'), 1000);
-            });
-        }
-
-        function connectToPeer() {
-            const remoteId = document.getElementById('joinPeerInput').value.trim();
-            const statusElem = document.getElementById('onlineStatus');
-
-            if (!remoteId) return;
-
-            statusElem.innerText = "Connectant a la sala...";
-            peerConn = peer.connect(remoteId);
-            setupPeerEvents();
-        }
-
-        function setupPeerEvents() {
-            const statusElem = document.getElementById('onlineStatus');
-
-            peerConn.on('open', () => {
-                statusElem.innerText = "Connexió establerta! Iniciant...";
-                setTimeout(() => startGame('online'), 1000);
-            });
-
-            peerConn.on('data', (data) => {
-                // Rebre sincronització de moviments
-                if (data.type === 'playerUpdate' && players[1]) {
-                    players[1].x = data.x;
-                    players[1].jumpZ = data.jumpZ;
-                }
-            });
-        }
-
-        function copyPeerId() {
-            const idText = document.getElementById('myPeerId').innerText;
-            navigator.clipboard.writeText(idText);
-            document.getElementById('onlineStatus').innerText = "Codi copiat al porta-retalls!";
-        }
-
-        // Inicialització en carregar la pàgina
-        window.onload = function() {
-            setupMobileControls();
-        };
-    </script>
+    function copyPeerID() {
+      const input = document.getElementById('my-peer-id');
+      input.select();
+      document.execCommand('copy');
+      alert("ID copiat al porta-retalls!");
+    }
+  </script>
 </body>
 </html>
